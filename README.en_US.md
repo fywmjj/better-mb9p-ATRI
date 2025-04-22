@@ -1,6 +1,7 @@
 # ATRI -My Dear Moments- Visual Novel Port (Optimized for Mi Band 9 Pro)
 
-> [/IMPORTANT]
+> \[!IMPORTANT]
+> 
 > This project is under active development and may contain unknown bugs or performance issues. Complete refactoring and testing take time, please be patient.
 
 ---
