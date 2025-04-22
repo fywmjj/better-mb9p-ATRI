@@ -1,10 +1,26 @@
 <script>
-export default {
-  onCreate() {
-    console.log("app created")
-  },
-  onDestroy() {
-    console.log("app destroyed")
+  /**
+   * 默认导出的对象包含了 Quick App 应用级别的生命周期钩子。
+   */
+  export default {
+    /**
+     * 应用进程创建时触发，只会调用一次。
+     * 适合执行全局初始化操作，例如设置全局状态、初始化服务等。
+     */
+    onCreate() {
+      // console.log("app created"); // 开发时可保留日志，发布时建议移除
+      // 在这里添加应用级别的初始化逻辑
+      console.log("应用进程已创建"); // 保留一个更明确的日志，或根据需要移除
+    },
+
+    /**
+     * 应用进程销毁时触发，只会调用一次。
+     * 适合执行全局清理操作，例如清除定时器、移除全局监听器、保存状态等。
+     */
+    onDestroy() {
+      // console.log("app destroyed"); // 开发时可保留日志，发布时建议移除
+      // 在这里添加应用级别的清理逻辑
+      console.log("应用进程已销毁"); // 保留一个更明确的日志，或根据需要移除
+    }
   }
-}
 </script>
