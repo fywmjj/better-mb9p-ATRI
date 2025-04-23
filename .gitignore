@@ -1,0 +1,88 @@
+# === Node.js / npm / yarn / pnpm ===
+# 依赖缓存目录
+node_modules/
+
+# Npm/Yarn/pnpm 本地缓存（有时使用）
+.npm/
+.yarn/
+
+# Npm/Yarn/pnpm 错误日志
+npm-debug.log*
+yarn-error.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Npm/Yarn 配置文件
+.npmrc
+# .yarnrc
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# === 构建输出 ===
+build/
+dist/
+out/
+lib/
+
+# === 快应用 / 项目特定 ===
+# RPK 包目录 (发布前本地存储)
+rc/
+
+# 签名目录
+sign/
+
+# === 测试 & 临时文件 ===
+test/
+tmp/
+temp/
+*.tmp
+
+# === 日志 ===
+logs/
+*.log
+*.log.*
+
+# === 操作系统拉屎处理 ===
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# GNU/Linux
+lost+found/
+
+# === AIoT IDE 配置 ===
+.vscode/*
+# 保留这些共享设置文件
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+# 工作区文件
+*.code-workspace
+
+# === 环境变量 ===
+# 默认忽略所有 .env 文件
+.env*
+# 允许跟踪示例或特定的非敏感环境文件
+!.env.example
+!.env.development
+!.env.production
+
+# === 测试覆盖率报告 ===
+coverage/
+.nyc_output/
+
+# === 其他 ===
+*.zip
+*.tar.*
+*.rar

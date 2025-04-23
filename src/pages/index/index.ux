@@ -3,42 +3,33 @@
     <!-- Background Image -->
     <image class="bg-image" src="/common/bg.png"></image>
 
-    <!-- True Ending Overlay Image (Conditional - Rendered If showTrueEndVisuals is true) -->
+    <!-- True Ending Overlay Image -->
     <image class="true-end-visual" src="/common/ATRI_TrueEnding.png" if="{{ showTrueEndVisuals }}"></image>
 
     <!-- Main Menu Buttons Container -->
-    <div class="menu-button-container">
-      <text class="menu-button true-end-button" if="{{ showTrueEndVisuals }}" @click="loadGame('TE')">TRUE END</text>
-      <text class="menu-button" @click="startGame()">START</text>
-      <!-- Use class binding for disabled state -->
-      <text class="menu-button {{ hasSaveData ? '' : 'disabled' }}" @click="showLoadOverlay()">LOAD</text>
-      <text class="menu-button" @click="showSettingsOverlay()">SYSTEM</text>
-      <text class="menu-button" @click="exitApp()">EXIT</text>
+    <div class="main-menu-button-container"> <!-- Changed class name -->
+      <text class="main-menu-button true-end-button" if="{{ showTrueEndVisuals }}" @click="loadGame('TE')">TRUE END</text>
+      <text class="main-menu-button" @click="startGame()">START</text>
+      <text class="main-menu-button {{ hasSaveData ? '' : 'disabled' }}" @click="showLoadOverlay()">LOAD</text>
+      <text class="main-menu-button" @click="showSettingsOverlay()">SYSTEM</text>
+      <text class="main-menu-button" @click="exitApp()">EXIT</text>
     </div>
 
-    <!-- Load Overlay (Conditional Rendering) -->
+    <!-- Load Overlay -->
     <div class="overlay load-overlay" if="{{ isLoadOverlayVisible }}">
        <scroll scroll-y="true" bounces="true" class="overlay-scroll">
           <text class="overlay-title">点击读取存档</text>
-          <text
-             class="save-slot-button"
-             for="{{ (index, slot) in recoveryData }}"
-             @click="loadGame(index)">
-             存档 {{ index + 1 }}
-          </text>
+          <text class="save-slot-button" for="{{ (index, slot) in recoveryData }}" @click="loadGame(index)">存档 {{ index + 1 }}</text>
            <text class="save-load-empty" if="{{ !hasSaveData }}">没有可用的存档</text>
           <text class="close-button" @click="hideLoadOverlay">关闭</text>
        </scroll>
     </div>
 
-    <!-- Settings Overlay (Conditional Rendering) -->
+    <!-- Settings Overlay -->
     <div class="overlay settings-overlay" if="{{ isSettingsOverlayVisible }}">
         <image class="settings-bg-image" src="/common/ev000b.png"></image>
-        <!-- Needs explicit height if using as background fill -->
         <image class="settings-text-bg" src="/common/text_bg.png"></image>
-
         <div class="settings-controls-wrapper">
-            <!-- Controls Area -->
             <div class="settings-controls">
                 <div class="settings-top-buttons">
                     <text class="settings-action-text" @click="saveSettingsAndClose()">保存并退出</text>
@@ -46,34 +37,30 @@
                 </div>
                 <div class="setting-item">
                     <text class="setting-label">显示速度 ({{ tempSettings.textSpeed }})：</text>
-                    <!-- Ensure value binding is correct -->
                     <slider class="setting-slider" min="20" max="60" step="1" value="{{ tempSettings.textSpeed }}" @change="updateTempSetting('textSpeed', $event)"></slider>
                 </div>
                 <div class="setting-item">
                     <text class="setting-label">文字大小 ({{ tempSettings.textSize }})：</text>
-                     <!-- Ensure value binding is correct -->
                      <slider class="setting-slider" min="20" max="32" step="1" value="{{ tempSettings.textSize }}" @change="updateTempSetting('textSize', $event)"></slider>
                 </div>
             </div>
-            <!-- Preview Area -->
             <scroll scroll-y="true" bounces="true" class="settings-preview-scroll">
-                 <!-- Ensure style binding is correct -->
                 <text class="settings-preview-text" style="font-size: {{ tempSettings.textSize }}px;">{{ textPreviewContent }}</text>
             </scroll>
         </div>
     </div>
 
-    <!-- Tips Overlay (Conditional Rendering) -->
+    <!-- Tips Overlay -->
     <div class="overlay tips-overlay" if="{{ isTipsOverlayVisible }}">
         <div class="tips-content">
             <text class="tips-text title">提示与信息</text>
             <text class="tips-text small">在"SYSTEM"中调整显示速度和文字大小。</text>
             <text class="tips-text small">游戏中右滑进入菜单。</text>
             <text class="tips-text warning">请勿反复点击START！耐心等待加载。</text>
-            <text class="tips-text separator">---</text>
+            <text class="tips-text separator"></text> <!-- Use border/background for separator -->
             <text class="tips-text small">制作：@liuyuze61</text>
             <text class="tips-text small">感谢：@Wxz226，@TLE</text>
-            <text class="tips-text separator">---</text>
+            <text class="tips-text separator"></text> <!-- Use border/background for separator -->
             <text class="tips-text confirm-button" @click="hideTipsOverlay()">我知道了</text>
         </div>
     </div>
@@ -85,41 +72,52 @@
   .page-container { width: 336px; height: 480px; position: relative; background-color: #000000; overflow: hidden; }
   .bg-image { width: 100%; height: 100%; object-fit: cover; }
   .true-end-visual { position: absolute; top: 0; left: 0; width: 100%; height: auto; opacity: 0.8; }
-  /* Menu Buttons */
-  .menu-button-container { position: absolute; top: 200px; left: 32px; display: flex; flex-direction: column; align-items: flex-start; }
-  .menu-button { font-size: 36px; font-weight: bold; color: #0A55BC; padding: 5px 0; margin-bottom: 10px; }
+
+  /* === Main Menu Button Styles === */
+  .main-menu-button-container { position: absolute; top: 215px; /* Slightly adjusted */ left: 35px; /* Slightly adjusted */ display: flex; flex-direction: column; align-items: flex-start; }
+  .main-menu-button {
+    font-size: 30px; /* Reduced size */
+    font-weight: bold;
+    color: #0A55BC;
+    padding: 3px 0; /* Reduced padding */
+    margin-bottom: 12px; /* Adjusted spacing */
+  }
   .true-end-button { color: #FFD700; }
-  .menu-button.disabled { color: #aaaaaa; }
-  /* Overlay Base Styles */
+  .main-menu-button.disabled { color: #aaaaaa; }
+
+  /* === Overlay Base Styles === */
   .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+
   /* Load Overlay */
   .load-overlay { padding: 20px; justify-content: flex-start; }
-  .overlay-scroll { width: 100%; flex-grow: 1; display: flex; flex-direction: column; align-items: center; }
+  .overlay-scroll { width: 100%; flex-grow: 1; display: flex; flex-direction: column; align-items: center; /* Requires <scroll> component for actual scrolling */ }
   .overlay-title { font-size: 22px; color: #333333; font-weight: bold; margin-bottom: 20px; margin-top: 10px; }
   .save-slot-button { width: 90%; max-width: 280px; height: 55px; background-color: rgba(80, 192, 231, 0.8); color: #ffffff; font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 15px; display: flex; justify-content: center; align-items: center; border-radius: 8px; flex-shrink: 0; }
   .save-load-empty { margin-top: 20px; font-size: 18px; color: #888888; }
-  .close-button { margin-top: auto; padding: 10px 20px; font-size: 20px; color: #007aff; margin-bottom: 10px; }
+  .close-button { margin-top: auto; padding: 10px 20px; font-size: 20px; color: #007aff; } /* No underline */
+
   /* Settings Overlay */
   .settings-overlay { padding: 0; justify-content: flex-start; position: relative; }
   .settings-bg-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;}
-  .settings-text-bg { position: absolute; bottom: 0; left: 0; width: 100%; height: 165px; /* Give text bg explicit height */}
+  .settings-text-bg { position: absolute; bottom: 0; left: 0; width: 100%; height: 165px; }
   .settings-controls-wrapper { width: 100%; height: 100%; position: relative; display: flex; flex-direction: column; }
-  .settings-controls { width: 100%; padding: 20px; background-color: rgba(0, 0, 0, 0.4); /* Slightly darker */ display: flex; flex-direction: column; flex-shrink: 0; margin-bottom: 155px; /* Space for preview scroll */ }
-  .settings-top-buttons { display: flex; justify-content: space-around; width: 100%; margin-bottom: 35px; /* More space */ }
+  .settings-controls { width: 100%; padding: 20px; background-color: rgba(0, 0, 0, 0.4); display: flex; flex-direction: column; flex-shrink: 0; margin-bottom: 155px; }
+  .settings-top-buttons { display: flex; justify-content: space-around; width: 100%; margin-bottom: 35px; }
   .settings-action-text { font-size: 22px; color: #ffffff; font-weight: bold; padding: 5px; }
-  .setting-item { width: 100%; margin-bottom: 30px; /* More space */ display: flex; flex-direction: column; align-items: center; }
+  .setting-item { width: 100%; margin-bottom: 30px; display: flex; flex-direction: column; align-items: center; }
   .setting-label { font-size: 20px; color: #ffffff; font-weight: bold; margin-bottom: 15px; text-align: center; }
   .setting-slider { width: 90%; max-width: 250px; }
   .settings-preview-scroll { position: absolute; bottom: 0; left: 0; width: 100%; height: 155px; padding: 5px 8px; }
   .settings-preview-text { color: #ffffff; font-weight: bold; width: 100%; text-align: left; }
+
   /* Tips Overlay */
   .tips-overlay { background-color: rgba(255, 255, 255, 0.98); padding: 20px; }
   .tips-content { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 300px; }
   .tips-text { font-size: 20px; color: #333333; margin-bottom: 12px; }
   .tips-text.title { font-size: 24px; font-weight: bold; margin-bottom: 20px; color: #000000; }
   .tips-text.small { font-size: 18px; color: #555555; }
-  .tips-text.warning { color: #DD2C00; /* Better red */ font-weight: bold; }
-  .tips-text.separator { color: #cccccc; margin: 5px 0 15px 0; width: 80%; height: 1px; background-color: #cccccc;}
+  .tips-text.warning { color: #DD2C00; font-weight: bold; }
+  .tips-text.separator { color: #cccccc; margin: 10px 0 20px 0; width: 80%; height: 1px; background-color: #cccccc;} /* Use border/bg */
   .confirm-button { font-size: 22px; color: #007aff; font-weight: bold; margin-top: 20px; padding: 10px; }
 </style>
 
@@ -129,296 +127,117 @@
   import prompt from '@system.prompt';
 
   const STORAGE_KEYS = { RECOVERY_DATA: 'recoveryData', SETTINGS: 'settings', TIPS_SHOWN: 'tips', FIN_STATUS: 'fin' };
-  const TIPS_SEEN_FLAG = 61; // Use a more descriptive name if possible?
+  const TIPS_SEEN_FLAG = 61;
   const DEFAULT_SETTINGS = { textSpeed: 40, textSize: 22 };
 
   export default {
     private: {
-      recoveryData: [],
-      settings: { ...DEFAULT_SETTINGS },
-      finStatus: { HE: false, BE: false },
-      isLoadOverlayVisible: false,
-      isSettingsOverlayVisible: false,
-      isTipsOverlayVisible: false,
-      tempSettings: { ...DEFAULT_SETTINGS }, // Holds settings during editing
-      // Text preview state
-      textPreviewContent: '',
-      textPreviewIndex: 0,
-      textPreviewTimerId: null,
+      recoveryData: [], settings: { ...DEFAULT_SETTINGS }, finStatus: { HE: false, BE: false },
+      isLoadOverlayVisible: false, isSettingsOverlayVisible: false, isTipsOverlayVisible: false,
+      tempSettings: { ...DEFAULT_SETTINGS }, textPreviewContent: '', textPreviewIndex: 0, textPreviewTimerId: null,
       textPreviewText: `Atri -My Dear Moments-\n文字显示样本，用于预览文本速度和大小。\nSample text for previewing speed and size.`,
     },
-
     computed: {
-        showTrueEndVisuals() {
-            return this.finStatus && this.finStatus.HE === true && this.finStatus.BE === true;
-        },
-        hasSaveData() {
-            return this.recoveryData && this.recoveryData.length > 0;
-        }
+        showTrueEndVisuals() { return this.finStatus && this.finStatus.HE === true && this.finStatus.BE === true; },
+        hasSaveData() { return this.recoveryData && this.recoveryData.length > 0; }
     },
 
     onInit() {
       console.log("[Index] onInit: Loading initial data.");
-      // Load data sequentially to avoid race conditions influencing initial state
-      this.loadSettings().then(() => {
-          return this.loadRecoveryData();
-      }).then(() => {
-          return this.loadFinStatus();
-      }).then(() => {
-          this.checkIfTipsNeeded(); // Check tips last
-      }).catch((err) => {
-          console.error("[Index] Error during chained loading:", err);
-          // Attempt to proceed even if some loads failed, using defaults
-          this.checkIfTipsNeeded(); // Still check tips on error
-      });
+      this.loadSettings().then(() => this.loadRecoveryData())
+                     .then(() => this.loadFinStatus())
+                     .then(() => this.checkIfTipsNeeded())
+                     .catch(err => { console.error("[Index] Load chain error:", err); this.checkIfTipsNeeded(); });
     },
+    onHide() { this.stopTextPreviewAnimation(); },
 
-     onHide() {
-        console.log("[Index] onHide: Stopping preview animation.");
-        this.stopTextPreviewAnimation(); // Ensure timer cleanup
-    },
-
-    // --- Data Loading Methods returning Promises ---
-    loadSettings() {
-        return new Promise((resolve, reject) => {
-            storage.get({
-                key: STORAGE_KEYS.SETTINGS,
-                success: (data) => {
-                    let loadedSettings = {};
-                    if (data) { try { loadedSettings = JSON.parse(data); } catch (e) { console.error("[Index] Parse settings failed:", e); } }
-                    this.settings = { ...DEFAULT_SETTINGS, ...loadedSettings };
-                    this.tempSettings = { ...this.settings }; // IMPORTANT: Init temp too
-                    console.log("[Index] Settings loaded:", this.settings);
-                   resolve();
-                },
-                fail: (data, code) => {
-                    console.warn(`[Index] Load settings failed: ${data}, code ${code}`);
-                    this.settings = { ...DEFAULT_SETTINGS }; // Use defaults
-                    this.tempSettings = { ...this.settings };
-                    resolve(); // Resolve even on fail, using defaults
-                },
-                // Complete removed - use resolve/reject in success/fail
-            });
+    // --- Data Loaders (returning Promises) ---
+    loadSettings() { return new Promise((resolve) => { /* ... unchanged logic ... */
+        storage.get({ key: STORAGE_KEYS.SETTINGS,
+            success: (d) => { let s = {}; if (d) { try { s = JSON.parse(d); } catch (e) {} } this.settings = { ...DEFAULT_SETTINGS, ...s }; this.tempSettings = { ...this.settings }; resolve(); },
+            fail: (d,c) => { console.warn(`[Index] Load settings fail: ${d}, ${c}`); this.settings = { ...DEFAULT_SETTINGS }; this.tempSettings = { ...this.settings }; resolve(); }
         });
-    },
-
-    loadRecoveryData() {
-       return new Promise((resolve, reject) => {
-            storage.get({
-                key: STORAGE_KEYS.RECOVERY_DATA,
-                success: (data) => {
-                    if (data) { try { this.recoveryData = JSON.parse(data); } catch (e) { console.error("[Index] Parse recovery failed:", e); this.recoveryData = []; } }
-                    else { this.recoveryData = []; }
-                    console.log(`[Index] Recovery loaded: ${this.recoveryData.length} slots`);
-                    resolve();
-                },
-                fail: (data, code) => {
-                    console.warn(`[Index] Load recovery failed: ${data}, code ${code}`);
-                    this.recoveryData = [];
-                    resolve(); // Resolve even on fail
-                },
-            });
-       });
-    },
-
-    loadFinStatus() {
-        return new Promise((resolve, reject) => {
-            storage.get({
-                key: STORAGE_KEYS.FIN_STATUS,
-                success: (data) => {
-                     const defaultStatus = { HE: false, BE: false }; let loadedStatus = {};
-                     if (data) { try { loadedStatus = JSON.parse(data); } catch (e) { console.error("[Index] Parse fin status failed:", e); } }
-                     this.finStatus = { ...defaultStatus, ...loadedStatus };
-                     console.log("[Index] Fin status loaded:", this.finStatus);
-                     resolve();
-                },
-                fail: (data, code) => {
-                    console.warn(`[Index] Load fin status failed: ${data}, code ${code}`);
-                    this.finStatus = { HE: false, BE: false }; // Use defaults
-                    resolve(); // Resolve even on fail
-                },
-            });
+    }); },
+    loadRecoveryData() { return new Promise((resolve) => { /* ... unchanged logic ... */
+        storage.get({ key: STORAGE_KEYS.RECOVERY_DATA,
+            success: (d) => { if (d) { try { this.recoveryData = JSON.parse(d); } catch (e) { this.recoveryData = []; } } else { this.recoveryData = []; } resolve(); },
+            fail: (d,c) => { console.warn(`[Index] Load recovery fail: ${d}, ${c}`); this.recoveryData = []; resolve(); }
         });
-    },
-
-     checkIfTipsNeeded() {
-        storage.get({
-            key: STORAGE_KEYS.TIPS_SHOWN,
-            success: (data) => {
-                 let seenFlag = null;
-                 if (data) { try { seenFlag = JSON.parse(data); } catch (e) { console.error("[Index] Parse tips flag failed", e); } }
-                 if (seenFlag !== TIPS_SEEN_FLAG) {
-                     console.log("[Index] Tips flag not matched. Showing tips.");
-                     // Set flag *after* current execution context finishes
-                     setTimeout(() => { this.isTipsOverlayVisible = true; }, 0);
-                 } else {
-                     console.log("[Index] Tips flag matched. Not showing tips.");
-                     this.isTipsOverlayVisible = false;
-                 }
-            },
-            fail: (data, code) => {
-                 console.warn(`[Index] Check tips failed: ${data}, code ${code}`);
-                  // Show tips on failure to be safe
-                 setTimeout(() => { this.isTipsOverlayVisible = true; }, 0);
-            },
-            complete: () => {} // Add empty function for complete callback
+    }); },
+     loadFinStatus() { return new Promise((resolve) => { /* ... unchanged logic ... */
+        storage.get({ key: STORAGE_KEYS.FIN_STATUS,
+            success: (d) => { const ds = { HE: false, BE: false }; let s = {}; if (d) { try { s = JSON.parse(d); } catch (e) {} } this.finStatus = { ...ds, ...s }; resolve(); },
+            fail: (d,c) => { console.warn(`[Index] Load fin fail: ${d}, ${c}`); this.finStatus = { HE: false, BE: false }; resolve(); }
         });
-    },
+    }); },
+     checkIfTipsNeeded() { storage.get({ key: STORAGE_KEYS.TIPS_SHOWN,
+         success: (d) => { let flag = null; if (d) { try { flag = JSON.parse(d); } catch (e) {} } if (flag !== TIPS_SEEN_FLAG) { setTimeout(() => { this.isTipsOverlayVisible = true; }, 0); } else { this.isTipsOverlayVisible = false; } },
+         fail: (d,c) => { console.warn(`[Index] Check tips fail: ${d}, ${c}`); setTimeout(() => { this.isTipsOverlayVisible = true; }, 0); },
+         complete: () => {} });
+     },
 
-    // --- Navigation ---
-    startGame() {
-      console.log("[Index] Action: Start Game");
-      router.push({ uri: 'pages/detail', params: {} }); // No params = start new
-      prompt.showToast({ message: "加载游戏中..." });
-    },
-
-     loadGame(indexOrType) {
-        console.log(`[Index] Action: Load Game - Request: ${indexOrType}`);
+    // --- Navigation & Actions ---
+    startGame() { router.push({ uri: 'pages/detail' }); prompt.showToast({ message: "加载游戏中..." }); },
+    loadGame(indexOrType) {
         let loadParam;
-         if (typeof indexOrType === 'number') {
-             if (indexOrType >= 0 && indexOrType < this.recoveryData.length) {
-                 loadParam = { type: 'load', index: indexOrType };
-                 prompt.showToast({ message: `读取存档 ${indexOrType + 1}...` });
-             } else { console.error("[Index] Invalid save index:", indexOrType); prompt.showToast({ message: "无效存档" }); return; }
-         } else if (indexOrType === 'TE') {
-             loadParam = { type: 'TE' }; prompt.showToast({ message: "加载路线..." });
-         } else { console.error("[Index] Invalid load type:", indexOrType); prompt.showToast({ message: "无效类型" }); return; }
-
-        this.hideLoadOverlay();
-        router.push({ uri: `pages/detail`, params: { load: loadParam } });
+         if (typeof indexOrType === 'number') { if (indexOrType >= 0 && indexOrType < this.recoveryData.length) { loadParam = { type: 'load', index: indexOrType }; prompt.showToast({ message: `读取存档 ${indexOrType + 1}...` }); } else { prompt.showToast({ message: "无效存档" }); return; } }
+         else if (indexOrType === 'TE') { loadParam = { type: 'TE' }; prompt.showToast({ message: "加载路线..." }); } else { prompt.showToast({ message: "无效类型" }); return; }
+         this.hideLoadOverlay(); router.push({ uri: `pages/detail`, params: { load: loadParam } });
     },
-
-    exitApp() {
-      console.log("[Index] Action: Exit App");
-       try { this.$app.exit(); } catch(e) { console.error("[Index] Exit app error:", e); prompt.showToast({ message: "无法退出" }); }
-    },
+    exitApp() { try { this.$app.exit(); } catch(e) { prompt.showToast({ message: "无法退出" }); } },
 
     // --- Overlay Control ---
-    showLoadOverlay() {
-        console.log("[Index] Action: Show Load Overlay");
-        if (this.hasSaveData) { this.isLoadOverlayVisible = true; }
-        else { prompt.showToast({message: "没有可用的存档"}); }
-    },
-    hideLoadOverlay() {
-        console.log("[Index] Action: Hide Load Overlay");
-        this.isLoadOverlayVisible = false;
-    },
+    showLoadOverlay() { if (this.hasSaveData) { this.isLoadOverlayVisible = true; } else { prompt.showToast({message: "没有存档"}); } },
+    hideLoadOverlay() { this.isLoadOverlayVisible = false; },
 
     showSettingsOverlay() {
-        // ** DEBUG LOG for Issue 1 **
-        console.log("[Index] Action: showSettingsOverlay called.");
-        // Reset temp settings to current actual settings before showing
-        this.tempSettings = { ...this.settings };
-        console.log("[Index] Temp settings reset:", JSON.stringify(this.tempSettings));
-        this.isSettingsOverlayVisible = true;
-         // ** DEBUG LOG for Issue 1 **
-         // Use $nextTick or setTimeout to check the flag *after* potential UI update cycle
-         setTimeout(() => {
-             console.log(`[Index] isSettingsOverlayVisible state after setting true: ${this.isSettingsOverlayVisible}`);
-         }, 0);
-        this.startTextPreviewAnimation();
-    },
-
-    hideSettingsOverlay() {
-        console.log("[Index] Action: Hide Settings Overlay (no save)");
-        this.isSettingsOverlayVisible = false;
-        this.stopTextPreviewAnimation();
-        // Discard changes by not saving tempSettings
-    },
-
-    hideTipsOverlay() {
-        console.log("[Index] Action: Hide Tips Overlay");
-        this.isTipsOverlayVisible = false;
-        // Mark tips as seen
-        storage.set({ key: STORAGE_KEYS.TIPS_SHOWN, value: JSON.stringify(TIPS_SEEN_FLAG),
-            success: () => { console.log("[Index] Tips flag saved."); },
-            fail: (d, c) => { console.error(`[Index] Save tips flag failed: ${d}, ${c}`); },
-            complete: () => {}
+        console.log("[Index] showSettingsOverlay called.");
+        this.tempSettings = { ...this.settings }; // Reset temp on open
+        this.isSettingsOverlayVisible = true; // Set the flag
+        console.log(`[Index] isSettingsOverlayVisible set to: ${this.isSettingsOverlayVisible}`);
+        // Use $nextTick (if fails use setTimeout 0) to ensure DOM is ready for animation
+        this.$nextTick(() => {
+             console.log(`[Index] Starting animation in nextTick. Visible state: ${this.isSettingsOverlayVisible}`);
+             if (this.isSettingsOverlayVisible) { // Double check flag before starting
+                 this.startTextPreviewAnimation();
+             }
         });
+         // setTimeout(() => {
+         //     console.log(`[Index] Starting animation in setTimeout. Visible state: ${this.isSettingsOverlayVisible}`);
+         //     if (this.isSettingsOverlayVisible) { this.startTextPreviewAnimation();}
+         //  }, 0);
     },
+    hideSettingsOverlay() { this.isSettingsOverlayVisible = false; this.stopTextPreviewAnimation(); },
+    hideTipsOverlay() { this.isTipsOverlayVisible = false; storage.set({ key: STORAGE_KEYS.TIPS_SHOWN, value: JSON.stringify(TIPS_SEEN_FLAG), success: () => {}, fail: () => {}, complete: () => {} }); },
 
     // --- Settings Logic ---
     updateTempSetting(key, event) {
-      // ** DEBUG LOG for Issue 2 **
-      console.log(`[Index] updateTempSetting: key=${key}, Received event: ${JSON.stringify(event)}`);
-      // QuickApp slider often uses 'progress' or sometimes 'value'. Let's prioritize 'progress'.
-      let newValue = event.progress;
-      if (typeof newValue !== 'number' && typeof event.value === 'number') {
-          newValue = event.value; // Fallback to 'value' if progress is invalid/missing
-      }
-      console.log(`[Index] updateTempSetting: Extracted value: ${newValue} (type: ${typeof newValue})`);
-
+      let newValue = event.progress; // Assume progress
+      if (typeof newValue !== 'number' && typeof event.value === 'number') { newValue = event.value; } // Fallback
+      console.log(`[Index] updateTempSetting: key=${key}, value=${newValue}`); // Keep log
       if (typeof newValue === 'number' && (key === 'textSpeed' || key === 'textSize')) {
-          // Apply constraints
-          if (key === 'textSpeed') newValue = Math.max(20, Math.min(60, Math.round(newValue))); // Use Math.round
-          if (key === 'textSize') newValue = Math.max(20, Math.min(32, Math.round(newValue))); // Use Math.round
-
-           console.log(`[Index] updateTempSetting: Updating tempSettings.${key} from ${this.tempSettings[key]} to ${newValue}`);
-           // Use direct assignment (should work fine for simple object)
-           this.tempSettings[key] = newValue;
-           // Verify change (optional, useful for complex reactivity debugging)
-           // this.$forceUpdate(); // Avoid unless absolutely necessary
-
-           // Restart preview animation immediately if speed changed
-           if (key === 'textSpeed') {
-               this.startTextPreviewAnimation();
-           }
-      } else {
-          console.warn(`[Index] updateTempSetting: Invalid value (${newValue}) or key (${key}) received.`);
-      }
+          if (key === 'textSpeed') newValue = Math.max(20, Math.min(60, Math.round(newValue)));
+          if (key === 'textSize') newValue = Math.max(20, Math.min(32, Math.round(newValue)));
+          this.tempSettings[key] = newValue;
+          if (key === 'textSpeed') { this.startTextPreviewAnimation();}
+      } else { console.warn(`[Index] Invalid slider value/key.`); }
     },
-
     saveSettingsAndClose() {
-        console.log("[Index] Action: Save Settings", JSON.stringify(this.tempSettings));
-        this.settings = { ...this.tempSettings }; // Apply changes
-        try {
-            const settingsString = JSON.stringify(this.settings);
-             storage.set({
-                 key: STORAGE_KEYS.SETTINGS, value: settingsString,
-                 success: () => { prompt.showToast({ message: '设置已保存' }); this.hideSettingsOverlay(); },
-                 fail: (d, c) => { console.error(`[Index] Save settings failed: ${d}, ${c}`); prompt.showToast({ message: `保存失败` }); },
-                 complete: () => {}
-             });
-        } catch (e) { console.error("[Index] Stringify settings error:", e); prompt.showToast({ message: '设置数据错误' }); }
+        this.settings = { ...this.tempSettings };
+        try { const s = JSON.stringify(this.settings); storage.set({ key: STORAGE_KEYS.SETTINGS, value: s,
+                success: () => { prompt.showToast({ message: '设置已保存' }); this.hideSettingsOverlay(); },
+                fail: (d, c) => { prompt.showToast({ message: `保存失败` }); console.error(`Save setting fail: ${d}, ${c}`)},
+                complete: () => {} });
+        } catch (e) { prompt.showToast({ message: '设置数据错误' }); console.error("Stringify settings fail:", e); }
     },
 
-    // --- Text Preview Animation ---
-    startTextPreviewAnimation() {
-        this.stopTextPreviewAnimation();
-        // Reset state only if starting fresh
-        if(this.textPreviewIndex === 0) {
-            this.textPreviewContent = '';
-        }
-        // Only proceed if overlay is actually visible
-        if (this.isSettingsOverlayVisible) {
-             // console.log("[Index] Preview Animation Started/Resumed"); // Reduce noise
-            this.animateTextPreview();
-        } else {
-            console.log("[Index] Preview Animation prevented: Overlay not visible.");
-        }
-    },
-    stopTextPreviewAnimation() {
-        if (this.textPreviewTimerId) {
-            clearTimeout(this.textPreviewTimerId);
-            this.textPreviewTimerId = null;
-            // console.log("[Index] Preview Animation Stopped"); // Reduce noise
-        }
-    },
-    animateTextPreview() {
-        if (!this.isSettingsOverlayVisible || this.textPreviewTimerId === null) { return; } // Stop if closed or timer cleared
-        if (this.textPreviewIndex < this.textPreviewText.length) {
-            this.textPreviewContent += this.textPreviewText.charAt(this.textPreviewIndex);
-            this.textPreviewIndex++;
-            this.textPreviewTimerId = setTimeout(() => { this.animateTextPreview(); }, this.tempSettings.textSpeed);
-        } else {
-            // Text finished, wait then restart
-            this.textPreviewTimerId = setTimeout(() => {
-                if (this.isSettingsOverlayVisible) {
-                     this.textPreviewIndex = 0; // Reset index before starting again
-                     this.startTextPreviewAnimation();
-                }
-            }, 2000);
-        }
+    // --- Text Preview ---
+    startTextPreviewAnimation() { this.stopTextPreviewAnimation(); if (this.isSettingsOverlayVisible) { this.textPreviewContent = ''; this.textPreviewIndex = 0; this.animateTextPreview(); } },
+    stopTextPreviewAnimation() { if (this.textPreviewTimerId) { clearTimeout(this.textPreviewTimerId); this.textPreviewTimerId = null; } },
+    animateTextPreview() { /* ... unchanged logic ... */
+      if (!this.isSettingsÖverlayVisible || this.textPreviewTimerId === null) { return; }
+      if (this.textPreviewIndex < this.textPreviewText.length) { this.textPreviewContent += this.textPreviewText.charAt(this.textPreviewIndex); this.textPreviewIndex++; this.textPreviewTimerId = setTimeout(() => { this.animateTextPreview(); }, this.tempSettings.textSpeed); }
+      else { this.textPreviewTimerId = setTimeout(() => { if (this.isSettingsOverlayVisible) { this.textPreviewIndex = 0; this.startTextPreviewAnimation(); } }, 2000); }
     },
   }
 </script>
