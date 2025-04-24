@@ -1,8 +1,8 @@
 ---
 name: Bug Report / 报告 Bug
-description: Create a report to help us improve / 创建报告以帮助我们改进
+about: Report problems with this ported version to me. / 向我报告关于这个移植版本的问题。
 title: "[Bug]: 请在此处简要描述问题 / Briefly describe the issue here"
-labels: ["Bugs", "待确认 / tbc"]
+labels: Bugs
 assignees: ''
 
 ---

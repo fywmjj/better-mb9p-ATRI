@@ -1,8 +1,8 @@
 ---
 name: Feature Request / 添加新功能
-description: Suggest an idea for this project / 为此项目提出建议
+about: Want a new feature? Let me know! / 想要新的功能？告诉我！
 title: "[Feature]: 请在此处简要描述功能 / Briefly describe the feature here"
-labels: ["Enhancement / 功能改进", "建议 / suggestion"]
+labels: Enhancement / 功能改进
 assignees: ''
 
 ---
