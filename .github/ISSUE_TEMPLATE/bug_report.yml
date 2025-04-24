@@ -1,0 +1,103 @@
+name: Bug Report / 报告 Bug
+description: Report problems with this ported version / 报告此移植版本的问题
+title: "[Bug]: "
+labels: ["Bugs", "待确认 / tbc"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **感谢您报告 Bug！在提交前，请花一点时间搜索现有的 Issues，确保您的问题尚未被报告。**
+        **Thanks for reporting! Before submitting, please take a moment to search existing issues to avoid duplicates.**
+
+  - type: textarea
+    id: bug-description
+    attributes:
+      label: Describe the Bug / 描述 Bug
+      description: 清晰简洁地描述 Bug 是什么。 / A clear and concise description of what the bug is.
+      placeholder: |
+        例如：在 XX 场景点击 YY 按钮后应用闪退
+        e.g., App crashes after clicking YY button in XX scene
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce-steps
+    attributes:
+      label: Steps To Reproduce / 复现步骤
+      description: 详细说明如何触发这个 Bug。 / Provide detailed steps to reproduce the behavior.
+      placeholder: |
+        1. 打开应用 / Open the app
+        2. 前往 XX 章节/场景 / Go to Chapter/Scene XX
+        3. 点击 ... / Click ...
+        4. 观察到 ... / Observe that ...
+      render: markdown # Encourage Markdown list formatting
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected-behavior
+    attributes:
+      label: Expected Behavior / 预期行为
+      description: 您预期应该发生什么？ / What did you expect to happen instead?
+      placeholder: |
+        例如：点击按钮后应该正常进入 ZZ 场景
+        e.g., Should navigate to ZZ scene normally after clicking
+    validations:
+      required: true
+
+  - type: textarea
+    id: screenshots-logs
+    attributes:
+      label: Screenshots or Logs / 截图或日志 (Optional / 可选)
+      description: 如果适用，请附上截图或相关日志片段以帮助诊断。 / If applicable, add screenshots or relevant log snippets to help diagnose the problem.
+      placeholder: |
+        (将截图或日志粘贴在此处 / Paste screenshots or logs here)
+
+  - type: dropdown
+    id: device-model
+    attributes:
+      label: Device Model / 设备型号
+      description: 您在哪个设备上遇到了问题？ / On which device did you encounter the issue?
+      options:
+        - Mi Band 9 Pro
+        - Mi Band 8 Pro
+        - Other / 其他（请在下方说明 / Please specify below）
+    validations:
+      required: true
+
+  - type: input
+    id: system-version
+    attributes:
+      label: System/Firmware Version / 系统（固件）版本
+      description: 您的设备固件版本号是多少？ (如果知道) / What is your device's firmware version? (If known)
+      placeholder: "例如 / e.g., 1.x.x"
+    validations:
+      required: true # Strongly recommend making this required
+
+  - type: input
+    id: app-version
+    attributes:
+      label: App Version / 应用版本
+      description: 您正在使用此应用的哪个版本？ (例如 Release Tag 或 Commit SHA) / Which version of this app are you using? (e.g., Release Tag or Commit SHA)
+      placeholder: "例如 / e.g., v1.0.1, a1b2c3d"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context / 补充说明
+      description: 任何其他有助于理解问题的背景信息。如果您在设备型号中选择了“其他”，请在此处说明具体型号。 / Any other context about the problem. If you selected "Other" for device model, please specify here.
+      placeholder: |
+        (例如：问题只在快速存档后出现 / e.g., Issue only occurs after quick saving)
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist / 检查清单
+      description: 在提交前请确认以下事项。 / Please confirm the following before submitting.
+      options:
+        - label: 我已搜索过现有的 Issues，确认这不是一个重复报告。 / I have searched the existing issues and confirm this is not a duplicate.
+          required: true
+        - label: 我已尽可能详细地提供了复现步骤和设备信息。 / I have provided steps to reproduce and device information as detailed as possible.
+          required: true

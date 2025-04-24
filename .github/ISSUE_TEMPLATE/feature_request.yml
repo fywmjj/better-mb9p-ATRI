@@ -1,0 +1,54 @@
+name: Feature Request / 添加新功能
+description: Suggest an idea or improvement / 提出新想法或改进建议
+title: "[Feature]: "
+labels: ["Enhancement / 功能改进", "建议 / suggestion"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **感谢您提出建议！请描述清楚您想要的功能及其动机。**
+        **Thanks for your suggestion! Please clearly describe the feature you'd like and its motivation.**
+
+  - type: textarea
+    id: problem-motivation
+    attributes:
+      label: Is your feature request related to a problem? / 您的请求是否与某个问题有关？
+      description: 描述一下是什么问题让您觉得需要这个新功能。 / Describe the problem that makes you feel this feature is needed.
+      placeholder: |
+        例如：目前的存档方式有点繁琐，希望能有更快捷的方式。
+        e.g., The current save method is a bit cumbersome, hoping for a quicker way.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposed-solution
+    attributes:
+      label: Describe the solution you'd like / 描述您期望的解决方案
+      description: 清晰地描述您希望实现的功能。 / Clearly describe the feature you envision.
+      placeholder: |
+        例如：在游戏菜单中添加一个“快速存档”按钮，点击后直接覆盖特定存档位。
+        e.g., Add a "Quick Save" button in the game menu that directly overwrites a specific save slot upon clicking.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Describe alternatives you've considered / 您考虑过的替代方案 (Optional / 可选)
+      description: 是否有其他方式可以解决您的问题，或者您是否考虑过其他实现方式？ / Are there other ways to solve your problem, or have you considered alternative implementations?
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context / 补充说明 (Optional / 可选)
+      description: 任何有助于理解您建议的额外信息、截图或示例。 / Any extra information, mockups, or examples that help illustrate your suggestion.
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist / 检查清单
+      options:
+        - label: 我已搜索过现有的 Issues，确认没有类似的建议。 / I have searched the existing issues to ensure this suggestion is not a duplicate.
+          required: true
+        - label: 我理解这是一个功能建议，不保证一定会被实现。 / I understand this is a feature suggestion and there's no guarantee it will be implemented.
+          required: true
