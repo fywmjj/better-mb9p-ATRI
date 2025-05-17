@@ -1,0 +1,98 @@
+{
+  "name": "ATRI",
+  "version": "2.0.0",
+  "description": "ATRI -My Dear Moments- 视觉小说移植 (小米手环 9 Pro 版)",
+  "private": true,
+  "author": "Yaowen Fan <maoxian666@outlook.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/fywmjj/better-mb9p-ATRI.git"
+  },
+  "bugs": {
+    "url": "https://github.com/fywmjj/better-mb9p-ATRI/issues"
+  },
+  "homepage": "https://github.com/fywmjj/better-mb9p-ATRI#readme",
+  "keywords": [
+    "xiaomi",
+    "miband",
+    "nuttx",
+    "quickapp",
+    "xiaomi-vela-app",
+    "miband9pro",
+    "visual-novel"
+  ],
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "scripts": {
+    "start": "aiot server --watch --open-nuttx",
+    "build": "npm run clean && aiot build --enable-jsc",
+    "release": "npm run clean && aiot release --enable-jsc",
+    "watch": "aiot watch --open-nuttx",
+    "lint": "eslint --format codeframe --fix --ext .ux,.js src/",
+    "lint:css": "stylelint '**/*.{less,css}' --fix --custom-syntax postcss-less",
+    "format": "prettier --write .",
+    "clean": "rm -rf dist build output",
+    "prepare": "husky install"
+  },
+  "lint-staged": {
+    "*.{ux,js}": [
+      "prettier --write",
+      "eslint --format codeframe --fix"
+     
+    ],
+    "*.{less,css}": [
+      "prettier --write",
+      "stylelint --fix --custom-syntax postcss-less"
+     
+    ]
+   
+  },
+  "devDependencies": {
+   
+    "aiot-toolkit": "^2.0.0", // Xiaomi: aiot-toolkit 2.0 已经发布
+    "@aiot-toolkit/velasim": "^1.0.0",
+    "@aiot-toolkit/jsc": "^2.0.0",
+    "ux-types": "^1.0.0",
+
+   
+    "eslint": "^9.0.0",
+    "@babel/core": "^7.23.0",
+    "@babel/eslint-parser": "^7.23.0",
+    "eslint-config-prettier": "^9.0.0",
+    "eslint-plugin-prettier": "^5.0.0",
+    "eslint-plugin-ux": "^0.1.0",
+    "eslint-plugin-import": "^2.29.0",
+    "eslint-import-resolver-node": "^0.3.9",
+    "prettier": "^3.0.0",
+
+   
+    "stylelint": "^16.0.0",
+    "stylelint-config-standard": "^35.0.0",
+    "stylelint-config-recess-order": "^4.0.0",
+    "stylelint-order": "^6.0.0",
+    "postcss": "^8.4.0",
+    "postcss-html": "^1.6.0",
+    "postcss-less": "^6.0.0",
+
+   
+    "less": "^4.2.0",
+    "less-loader": "^11.1.0",
+
+   
+    "husky": "^9.0.0",
+    "lint-staged": "^15.0.0",
+    "@commitlint/cli": "^18.0.0",
+    "@commitlint/config-conventional": "^18.0.0"
+  },
+  "eslintConfig": {
+    "parser": "@babel/eslint-parser"
+   
+  },
+  "commitlint": {
+    "extends": [
+      "@commitlint/config-conventional"
+    ]
+  }
+}
