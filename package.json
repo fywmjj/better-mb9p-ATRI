@@ -51,7 +51,7 @@
   },
   "devDependencies": {
    
-    "aiot-toolkit": "^2.0.0", // Xiaomi: aiot-toolkit 2.0 已经发布
+    "aiot-toolkit": "^2.0.0",
     "@aiot-toolkit/velasim": "^1.0.0",
     "@aiot-toolkit/jsc": "^2.0.0",
     "ux-types": "^1.0.0",
