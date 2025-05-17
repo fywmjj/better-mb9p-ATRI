@@ -1,0 +1,71 @@
+name: Sync with Upstream (liuyuze61/ATRI-miband)
+
+on:
+  # 每天 UTC 00:00 自动运行
+  schedule:
+    - cron: '0 0 * * *'
+  # 允许手动从 Actions 标签页触发
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout target repository (fywmjj/better-mb9p-ATRI)
+        uses: actions/checkout@v4
+        with:
+          # 检出你需要同步的目标分支
+          ref: 'only-for-sync'
+          # 获取所有历史记录，以便 reset 操作能正确找到 upstream/main
+          fetch-depth: 0
+          # 使用默认的 GITHUB_TOKEN，它通常具有推送权限
+          # 如果仓库设置限制了 token 权限，可能需要调整仓库设置或使用 Personal Access Token (PAT)
+          # token: ${{ secrets.GITHUB_TOKEN }} # 通常不需要显式指定
+
+      - name: Set up Git user
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Add upstream remote repository
+        run: |
+          echo "Adding upstream remote..."
+          git remote add upstream https://github.com/liuyuze61/ATRI-miband.git
+          git remote -v # 打印远程仓库列表以供调试
+
+      - name: Fetch changes from upstream
+        run: |
+          echo "Fetching from upstream..."
+          git fetch upstream
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to fetch from upstream repository."
+            exit 1
+          fi
+          echo "Fetch successful."
+
+      - name: Reset local branch to upstream/main
+        run: |
+          echo "Resetting 'only-for-sync' branch to 'upstream/main'..."
+          # 确保我们在目标分支上 (虽然 checkout action 通常会处理好)
+          git checkout only-for-sync
+          # 强制重置本地分支到上游的主分支状态
+          git reset --hard upstream/main
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to reset local branch to upstream/main."
+            exit 1
+          fi
+          echo "Reset successful."
+
+      - name: Force push changes to origin (fywmjj/better-mb9p-ATRI)
+        run: |
+          echo "Force pushing 'only-for-sync' to origin..."
+          # 强制推送，因为历史记录已被 reset --hard 改变
+          git push origin only-for-sync --force
+          if [ $? -ne 0 ]; then
+            echo "::error::Failed to force push to origin."
+            exit 1
+          fi
+          echo "Force push successful. Synchronization complete."
+        # 使用默认的 GITHUB_TOKEN 进行推送 (只供调试)
+        # env:
+        #   GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
