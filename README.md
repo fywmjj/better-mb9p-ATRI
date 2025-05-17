@@ -1,6 +1,6 @@
 # ATRI -My Dear Moments- 视觉小说移植 (小米手环 9 Pro 版)
 
-> \[!IMPORTANT]
+> [!IMPORTANT]
 > 本项目仍在积极开发，可能存在未知 BUG 或性能问题。完整重构和测试需要时间，请耐心等待。
 
 ---
