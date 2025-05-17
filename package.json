@@ -52,9 +52,9 @@
   "devDependencies": {
    
     "aiot-toolkit": "^2.0.0",
-    "@aiot-toolkit/velasim": "^1.0.0",
-    "@aiot-toolkit/jsc": "^2.0.0",
-    "ux-types": "^1.0.0",
+    "@aiot-toolkit/velasim": "^0.1.26",
+    "@aiot-toolkit/jsc": "^1.0.0",
+    "ux-types": "^0.1.1",
 
    
     "eslint": "^9.0.0",
@@ -62,7 +62,7 @@
     "@babel/eslint-parser": "^7.23.0",
     "eslint-config-prettier": "^9.0.0",
     "eslint-plugin-prettier": "^5.0.0",
-    "eslint-plugin-ux": "^0.1.0",
+    "eslint-plugin-ux": "^0.0.4",
     "eslint-plugin-import": "^2.29.0",
     "eslint-import-resolver-node": "^0.3.9",
     "prettier": "^3.0.0",
@@ -96,3 +96,4 @@
     ]
   }
 }
+
