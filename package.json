@@ -51,7 +51,7 @@
   },
   "devDependencies": {
    
-    "aiot-toolkit": "^2.0.0",
+    "aiot-toolkit": "^2.0.3",
     "@aiot-toolkit/velasim": "^0.1.26",
     "@aiot-toolkit/jsc": "^1.0.0",
     "ux-types": "^0.1.1",
