@@ -27,33 +27,6 @@
        </scroll>
     </div>
 
-    <!-- Settings Overlay -->
-    <div class="overlay settings-overlay" if="{{ isSettingsOverlayVisible }}">
-        <!-- 设置界面的背景图，路径也更新了。 -->
-        <image class="settings-bg-image" src="/common/images/ev000b.png"></image>
-        <!-- 设置界面的文本背景图，也更新了路径。 -->
-        <image class="settings-text-bg" src="/common/images/text_bg.png"></image>
-        <div class="settings-controls-wrapper">
-            <div class="settings-controls">
-                <div class="settings-top-buttons">
-                    <text class="settings-action-text" @click="saveSettingsAndClose()">保存并退出</text>
-                    <text class="settings-action-text" @click="hideSettingsOverlay()">直接退出</text>
-                </div>
-                <div class="setting-item">
-                    <text class="setting-label">显示速度 ({{ tempSettings.textSpeed }})：</text>
-                    <slider class="setting-slider" min="20" max="60" step="1" value="{{ tempSettings.textSpeed }}" @change="updateTempSetting('textSpeed', $event)"></slider>
-                </div>
-                <div class="setting-item">
-                    <text class="setting-label">文字大小 ({{ tempSettings.textSize }})：</text>
-                     <slider class="setting-slider" min="20" max="32" step="1" value="{{ tempSettings.textSize }}" @change="updateTempSetting('textSize', $event)"></slider>
-                </div>
-            </div>
-            <scroll scroll-y="true" bounces="true" class="settings-preview-scroll">
-                <text class="settings-preview-text" style="font-size: {{ tempSettings.textSize }}px;">{{ textPreviewContent }}</text>
-            </scroll>
-        </div>
-    </div>
-
     <!-- Tips Overlay -->
     <div class="overlay tips-overlay" if="{{ isTipsOverlayVisible }}">
         <div class="tips-content">
@@ -100,23 +73,6 @@
   .save-load-empty { margin-top: 20px; font-size: 18px; color: #888888; }
   .close-button { margin-top: auto; padding: 10px 20px; font-size: 20px; color: #007aff; } /* No underline */
 
-  /* Settings Overlay */
-  /* 设置界面样式调整，之前它会跑到右边去，现在应该能正常全屏显示了。这个定位问题可把我折腾坏了，差点以为是Vela的bug呢。😂 */
-  .settings-overlay { padding: 0; justify-content: flex-start; position: relative; }
-  .settings-bg-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;}
-  .settings-text-bg { position: absolute; bottom: 0; left: 0; width: 100%; height: 165px; }
-  /* 确保这个容器的尺寸计算是正确的，避免内容溢出导致滚动条出现。 */
-  .settings-controls-wrapper { width: 100%; height: 100%; position: relative; display: flex; flex-direction: column; box-sizing: border-box; }
-  /* 控制面板也加上box-sizing，防止padding导致宽度溢出。 */
-  .settings-controls { width: 100%; padding: 20px; background-color: rgba(0, 0, 0, 0.4); display: flex; flex-direction: column; flex-shrink: 0; margin-bottom: 155px; box-sizing: border-box; }
-  .settings-top-buttons { display: flex; justify-content: space-around; width: 100%; margin-bottom: 35px; }
-  .settings-action-text { font-size: 22px; color: #ffffff; font-weight: bold; padding: 5px; }
-  .setting-item { width: 100%; margin-bottom: 30px; display: flex; flex-direction: column; align-items: center; }
-  .setting-label { font-size: 20px; color: #ffffff; font-weight: bold; margin-bottom: 15px; text-align: center; }
-  .setting-slider { width: 90%; max-width: 250px; }
-  .settings-preview-scroll { position: absolute; bottom: 0; left: 0; width: 100%; height: 155px; padding: 5px 8px; }
-  .settings-preview-text { color: #ffffff; font-weight: bold; width: 100%; text-align: left; }
-
   /* Tips Overlay */
   .tips-overlay { background-color: rgba(255, 255, 255, 0.98); padding: 20px; }
   .tips-content { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 300px; }
@@ -133,16 +89,13 @@
   import storage from '@system.storage';
   import prompt from '@system.prompt';
 
-  const STORAGE_KEYS = { RECOVERY_DATA: 'recoveryData', SETTINGS: 'settings', TIPS_SHOWN: 'tips', FIN_STATUS: 'fin' };
+  const STORAGE_KEYS = { RECOVERY_DATA: 'recoveryData', TIPS_SHOWN: 'tips', FIN_STATUS: 'fin' };
   const TIPS_SEEN_FLAG = 61;
-  const DEFAULT_SETTINGS = { textSpeed: 40, textSize: 22 };
 
   export default {
     private: {
-      recoveryData: [], settings: { ...DEFAULT_SETTINGS }, finStatus: { HE: false, BE: false },
-      isLoadOverlayVisible: false, isSettingsOverlayVisible: false, isTipsOverlayVisible: false,
-      tempSettings: { ...DEFAULT_SETTINGS }, textPreviewContent: '', textPreviewIndex: 0, textPreviewTimerId: null,
-      textPreviewText: `Atri -My Dear Moments-\n文字显示样本，用于预览文本速度和大小。\nSample text for previewing speed and size.`,
+      recoveryData: [], finStatus: { HE: false, BE: false },
+      isLoadOverlayVisible: false, isTipsOverlayVisible: false,
     },
     computed: {
         showTrueEndVisuals() { return this.finStatus && this.finStatus.HE === true && this.finStatus.BE === true; },
@@ -152,20 +105,16 @@
     onInit() {
       // 应用启动时的初始化流程，加载各种数据。这块逻辑比较复杂，得确保每一步都稳妥，不然启动就崩了可不好。👍
       console.log("[Index] onInit: Loading initial data.");
-      this.loadSettings().then(() => this.loadRecoveryData())
-                     .then(() => this.loadFinStatus())
-                     .then(() => this.checkIfTipsNeeded())
-                     .catch(err => { console.error("[Index] Load chain error:", err); this.checkIfTipsNeeded(); });
+      // 移除了settings的加载，因为现在设置页面独立了，它自己负责加载。
+      this.loadRecoveryData()
+          .then(() => this.loadFinStatus())
+          .then(() => this.checkIfTipsNeeded())
+          .catch(err => { console.error("[Index] Load chain error:", err); this.checkIfTipsNeeded(); });
     },
-    onHide() { this.stopTextPreviewAnimation(); },
+    // onHide 生命周期钩子不再需要，因为文本预览动画已移至独立设置页面。
 
     // --- 数据加载器 ---
-    loadSettings() { return new Promise((resolve) => {
-        storage.get({ key: STORAGE_KEYS.SETTINGS,
-            success: (d) => { let s = {}; if (d) { try { s = JSON.parse(d); } catch (e) {} } this.settings = { ...DEFAULT_SETTINGS, ...s }; this.tempSettings = { ...this.settings }; resolve(); },
-            fail: (d,c) => { console.warn(`[Index] Load settings fail: ${d}, ${c}`); this.settings = { ...DEFAULT_SETTINGS }; this.tempSettings = { ...this.settings }; resolve(); }
-        });
-    }); },
+    // loadSettings 方法已移至新的设置页面。
     loadRecoveryData() { return new Promise((resolve) => {
         storage.get({ key: STORAGE_KEYS.RECOVERY_DATA,
             success: (d) => { if (d) { try { this.recoveryData = JSON.parse(d); } catch (e) { this.recoveryData = []; } } else { this.recoveryData = []; } resolve(); },
@@ -202,55 +151,15 @@
     hideLoadOverlay() { this.isLoadOverlayVisible = false; },
 
     showSettingsOverlay() {
-        console.log("[Index] showSettingsOverlay called.");
-        this.tempSettings = { ...this.settings }; // Reset temp on open
-        this.isSettingsOverlayVisible = true; // Set the flag
-        console.log(`[Index] isSettingsOverlayVisible set to: ${this.isSettingsOverlayVisible}`);
-        // Use $nextTick (if fails use setTimeout 0) to ensure DOM is ready for animation
-        this.$nextTick(() => {
-             console.log(`[Index] Starting animation in nextTick. Visible state: ${this.isSettingsOverlayVisible}`);
-             if (this.isSettingsOverlayVisible) { // Double check flag before starting
-                 this.startTextPreviewAnimation();
-             }
-        });
-         // setTimeout(() => {
-         //     console.log(`[Index] Starting animation in setTimeout. Visible state: ${this.isSettingsOverlayVisible}`);
-         //     if (this.isSettingsOverlayVisible) { this.startTextPreviewAnimation();}
-         //  }, 0);
+        console.log("[Index] showSettingsOverlay called. Navigating to settings page.");
+        // 以前这里是直接显示一个浮层，现在把设置功能独立成一个页面了。
+        // 这样结构更清晰，也解决了之前定位的一些玄学问题。一举两得！🥳
+        router.push({ uri: 'pages/settings' });
     },
-    hideSettingsOverlay() { this.isSettingsOverlayVisible = false; this.stopTextPreviewAnimation(); },
+    // hideSettingsOverlay 方法已移除，因为现在是页面跳转，而不是显示/隐藏浮层。
     hideTipsOverlay() { this.isTipsOverlayVisible = false; storage.set({ key: STORAGE_KEYS.TIPS_SHOWN, value: JSON.stringify(TIPS_SEEN_FLAG), success: () => {}, fail: () => {}, complete: () => {} }); },
 
-    // --- 设置逻辑 ---
-    updateTempSetting(key, event) {
-      let newValue = event.progress; // Assume progress
-      if (typeof newValue !== 'number' && typeof event.value === 'number') { newValue = event.value; } // Fallback
-      console.log(`[Index] updateTempSetting: key=${key}, value=${newValue}`); // Keep log
-      if (typeof newValue === 'number' && (key === 'textSpeed' || key === 'textSize')) {
-          if (key === 'textSpeed') newValue = Math.max(20, Math.min(60, Math.round(newValue)));
-          if (key === 'textSize') newValue = Math.max(20, Math.min(32, Math.round(newValue)));
-          this.tempSettings[key] = newValue;
-          if (key === 'textSpeed') { this.startTextPreviewAnimation();}
-      } else { console.warn(`[Index] Invalid slider value/key.`); }
-    },
-    saveSettingsAndClose() {
-        // 保存设置并关闭界面，确保用户配置能持久化。希望这次别再有保存失败的问题了，不然用户要骂娘了。😤
-        this.settings = { ...this.tempSettings };
-        try { const s = JSON.stringify(this.settings); storage.set({ key: STORAGE_KEYS.SETTINGS, value: s,
-                success: () => { prompt.showToast({ message: '设置已保存' }); this.hideSettingsOverlay(); },
-                fail: (d, c) => { prompt.showToast({ message: `保存失败` }); console.error(`Save setting fail: ${d}, ${c}`)},
-                complete: () => {} });
-        } catch (e) { prompt.showToast({ message: '设置数据异常' }); console.error("Stringify settings fail:", e); }
-    },
-
-    // --- 文本预览动画 ---
-    startTextPreviewAnimation() { this.stopTextPreviewAnimation(); if (this.isSettingsOverlayVisible) { this.textPreviewContent = ''; this.textPreviewIndex = 0; this.animateTextPreview(); } },
-    stopTextPreviewAnimation() { if (this.textPreviewTimerId) { clearTimeout(this.textPreviewTimerId); this.textPreviewTimerId = null; } },
-    animateTextPreview() {
-      // 文本预览动画的逻辑，修复了一个拼写错误（isSettingsÖverlayVisible -> isSettingsOverlayVisible），导致预览文本不显示。这种低级错误，下次一定注意！🤦‍♀️
-      if (!this.isSettingsOverlayVisible || this.textPreviewTimerId === null) { return; }
-      if (this.textPreviewIndex < this.textPreviewText.length) { this.textPreviewContent += this.textPreviewText.charAt(this.textPreviewIndex); this.textPreviewIndex++; this.textPreviewTimerId = setTimeout(() => { this.animateTextPreview(); }, this.tempSettings.textSpeed); }
-      else { this.textPreviewTimerId = setTimeout(() => { if (this.isSettingsOverlayVisible) { this.textPreviewIndex = 0; this.startTextPreviewAnimation(); } }, 2000); }
-    },
+    // --- 设置逻辑 (已移至 /pages/settings/settings.ux) ---
+    // updateTempSetting, saveSettingsAndClose, startTextPreviewAnimation, stopTextPreviewAnimation, animateTextPreview 方法已移至新的设置页面。
   }
 </script>

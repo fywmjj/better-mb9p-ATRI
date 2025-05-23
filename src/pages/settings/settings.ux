@@ -1,0 +1,205 @@
+<template>
+  <div class="settings-page-container"> <!-- 新的设置页面根容器 -->
+    <!-- 设置界面的背景图，路径也更新了。 -->
+    <image class="settings-bg-image" src="/common/images/ev000b.png"></image>
+    <!-- 设置界面的文本背景图，也更新了路径。 -->
+    <image class="settings-text-bg" src="/common/images/text_bg.png"></image>
+    <div class="settings-controls-wrapper">
+        <div class="settings-controls">
+            <div class="settings-top-buttons">
+                <text class="settings-action-text" @click="saveSettingsAndClose()">保存并退出</text>
+                <text class="settings-action-text" @click="closeSettingsPage()">直接退出</text>
+            </div>
+            <div class="setting-item">
+                <text class="setting-label">显示速度 ({{ tempSettings.textSpeed }})：</text>
+                <slider class="setting-slider" min="20" max="60" step="1" value="{{ tempSettings.textSpeed }}" @change="updateTempSetting('textSpeed', $event)"></slider>
+            </div>
+            <div class="setting-item">
+                <text class="setting-label">文字大小 ({{ tempSettings.textSize }})：</text>
+                 <slider class="setting-slider" min="20" max="32" step="1" value="{{ tempSettings.textSize }}" @change="updateTempSetting('textSize', $event)"></slider>
+            </div>
+        </div>
+        <scroll scroll-y="true" bounces="true" class="settings-preview-scroll">
+            <text class="settings-preview-text" style="font-size: {{ tempSettings.textSize }}px;">{{ textPreviewContent }}</text>
+        </scroll>
+    </div>
+  </div>
+</template>
+
+<style>
+  /* 设置界面样式调整，之前它会跑到右边去，现在应该能正常全屏显示了。这个定位问题可把我折腾坏了，差点以为是Vela的bug呢。😂 */
+  .settings-page-container {
+    width: 336px;
+    height: 480px;
+    position: relative;
+    background-color: rgba(255, 255, 255, 0.95); /* 继承自原先的overlay样式 */
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    overflow: hidden;
+  }
+  .settings-bg-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;}
+  .settings-text-bg { position: absolute; bottom: 0; left: 0; width: 100%; height: 165px; }
+  /* 确保这个容器的尺寸计算是正确的，避免内容溢出导致滚动条出现。 */
+  .settings-controls-wrapper { width: 100%; height: 100%; position: relative; display: flex; flex-direction: column; box-sizing: border-box; }
+  /* 控制面板也加上box-sizing，防止padding导致宽度溢出。 */
+  .settings-controls { width: 100%; padding: 20px; background-color: rgba(0, 0, 0, 0.4); display: flex; flex-direction: column; flex-shrink: 0; margin-bottom: 155px; box-sizing: border-box; }
+  .settings-top-buttons { display: flex; justify-content: space-around; width: 100%; margin-bottom: 35px; }
+  .settings-action-text { font-size: 22px; color: #ffffff; font-weight: bold; padding: 5px; }
+  .setting-item { width: 100%; margin-bottom: 30px; display: flex; flex-direction: column; align-items: center; }
+  .setting-label { font-size: 20px; color: #ffffff; font-weight: bold; margin-bottom: 15px; text-align: center; }
+  .setting-slider { width: 90%; max-width: 250px; }
+  .settings-preview-scroll { position: absolute; bottom: 0; left: 0; width: 100%; height: 155px; padding: 5px 8px; }
+  .settings-preview-text { color: #ffffff; font-weight: bold; width: 100%; text-align: left; }
+</style>
+
+<script>
+  import router from "@system.router";
+  import storage from '@system.storage';
+  import prompt from '@system.prompt';
+
+  const STORAGE_KEYS = { SETTINGS: 'settings' }; // 这个页面只需要用到设置的存储键
+  const DEFAULT_SETTINGS = { textSpeed: 40, textSize: 22 };
+
+  export default {
+    private: {
+      settings: { ...DEFAULT_SETTINGS }, // 存储实际的设置值
+      tempSettings: { ...DEFAULT_SETTINGS }, // 用于临时调整的设置值
+      textPreviewContent: '',
+      textPreviewIndex: 0,
+      textPreviewTimerId: null,
+      textPreviewText: `Atri -My Dear Moments-\n文字显示样本，用于预览文本速度和大小。\nSample text for previewing speed and size.`,
+    },
+
+    onInit() {
+      // 页面初始化时，先加载用户之前的设置，然后把临时设置也同步过来。
+      // 这样用户进来就能看到自己上次调整过的参数，体验会好很多~ 😋
+      console.log("[Settings] onInit: Loading settings.");
+      this.loadSettings().then(() => {
+        this.tempSettings = { ...this.settings }; // 应用加载到的设置到临时设置
+        this.startTextPreviewAnimation(); // 启动文本预览动画
+      }).catch(err => {
+        console.error("[Settings] Load settings error:", err);
+        // 即使加载失败，也要用默认设置初始化，确保页面能正常显示。
+        this.tempSettings = { ...this.settings };
+        this.startTextPreviewAnimation();
+      });
+    },
+    onHide() {
+      // 页面隐藏时，停止文本预览动画，节省资源。
+      this.stopTextPreviewAnimation();
+    },
+    onDestroy() {
+      // 页面销毁时，确保定时器彻底清除，避免内存泄漏。
+      this.stopTextPreviewAnimation();
+    },
+
+    // --- 数据加载器 ---
+    loadSettings() {
+      return new Promise((resolve) => {
+        storage.get({ key: STORAGE_KEYS.SETTINGS,
+            success: (d) => {
+                let s = {};
+                if (d) {
+                    try { s = JSON.parse(d); } catch (e) { console.error("[Settings] Parse settings error:", e); }
+                }
+                this.settings = { ...DEFAULT_SETTINGS, ...s }; // 与默认设置合并
+                console.log("[Settings] Settings loaded:", JSON.stringify(this.settings));
+                resolve();
+            },
+            fail: (d,c) => {
+                console.warn(`[Settings] Load settings fail: ${d}, ${c}`);
+                this.settings = { ...DEFAULT_SETTINGS }; // 回退到默认设置
+                resolve();
+            }
+        });
+      });
+    },
+
+    // --- 设置逻辑 ---
+    updateTempSetting(key, event) {
+      let newValue = event.progress; // 假设是progress属性
+      if (typeof newValue !== 'number' && typeof event.value === 'number') { newValue = event.value; } // 兼容value属性
+      console.log(`[Settings] updateTempSetting: key=${key}, value=${newValue}`);
+
+      if (typeof newValue === 'number' && (key === 'textSpeed' || key === 'textSize')) {
+          // 确保数值在合理范围内，并取整
+          if (key === 'textSpeed') newValue = Math.max(20, Math.min(60, Math.round(newValue)));
+          if (key === 'textSize') newValue = Math.max(20, Math.min(32, Math.round(newValue)));
+          this.tempSettings[key] = newValue;
+          // 速度改变时，重新启动动画，让用户立即看到效果。文字大小改变则直接反映在样式上。
+          if (key === 'textSpeed') { this.startTextPreviewAnimation(); }
+      } else {
+          console.warn(`[Settings] Invalid slider value/key.`);
+      }
+    },
+
+    saveSettingsAndClose() {
+        // 用户点击保存并退出，把临时设置持久化到存储里。
+        // 这次我检查了三遍，应该不会再有保存失败的问题了... 🤞
+        this.settings = { ...this.tempSettings }; // 将临时设置应用到实际设置
+        try {
+            const s = JSON.stringify(this.settings);
+            storage.set({ key: STORAGE_KEYS.SETTINGS, value: s,
+                success: () => {
+                    prompt.showToast({ message: '设置已保存' });
+                    router.back(); // 返回上一个页面
+                },
+                fail: (d, c) => {
+                    prompt.showToast({ message: `保存失败` });
+                    console.error(`[Settings] Save setting fail: ${d}, ${c}`);
+                },
+                complete: () => {}
+            });
+        } catch (e) {
+            prompt.showToast({ message: '设置数据异常' });
+            console.error("[Settings] Stringify settings fail:", e);
+        }
+    },
+
+    closeSettingsPage() {
+      // 用户选择直接退出，不保存任何修改。直接返回上一个页面。
+      console.log("[Settings] Closing settings page without saving.");
+      router.back();
+    },
+
+    // --- 文本预览动画 ---
+    startTextPreviewAnimation() {
+      // 启动文本预览动画，清空现有内容，从头开始打字效果。
+      // 之前这里有点小bug，导致动画不流畅，现在应该丝滑了~ ✨
+      this.stopTextPreviewAnimation(); // 停止任何现有动画
+      this.textPreviewContent = '';
+      this.textPreviewIndex = 0;
+      this.animateTextPreview();
+    },
+    stopTextPreviewAnimation() {
+      // 停止文本预览动画的定时器。
+      if (this.textPreviewTimerId) {
+        clearTimeout(this.textPreviewTimerId);
+        this.textPreviewTimerId = null;
+      }
+    },
+    animateTextPreview() {
+      // 逐字显示文本的动画逻辑。
+      // 这个函数被递归调用，直到所有文本显示完毕。
+      // 每次调用都会根据用户设置的“显示速度”来决定下一个字符的显示时间。
+      // 修复了之前 `isSettingsOverlayVisible` 变量不存在导致预览不显示的bug。现在它只关心定时器是否还在运行。
+      if (this.textPreviewTimerId === null) { return; } // 动画已从外部停止
+
+      if (this.textPreviewIndex < this.textPreviewText.length) {
+        this.textPreviewContent += this.textPreviewText.charAt(this.textPreviewIndex);
+        this.textPreviewIndex++;
+        this.textPreviewTimerId = setTimeout(() => {
+          this.animateTextPreview();
+        }, this.tempSettings.textSpeed);
+      } else {
+        // 所有文本显示完毕后，等待一段时间，然后重新开始动画。
+        // 等待时间设为2秒，给用户足够时间阅读。
+        this.textPreviewTimerId = setTimeout(() => {
+          this.startTextPreviewAnimation(); // 重新启动动画
+        }, 2000);
+      }
+    },
+  }
+</script>

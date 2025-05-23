@@ -240,8 +240,10 @@
      loadChapterDataInternal(index) {
          if (typeof index !== 'number' || index < 0 || index >= this.chapterList.length) { console.error(`[Detail] Internal invalid index ${index}`); if(index !== 0) { this.loadChapterDataInternal(0); } else { router.back(); } return; }
          const filename = this.chapterList[index];
-         // 这里是读取章节数据的地方，现在改成了读取JSON文件，路径也更新了。之前txt格式太不灵活了，JSON才是王道！✨
-         const uri = `/common/content/${filename}.json`; console.log(`[Detail] Reading: ${uri}`);
+         // Vela 系统的 `JSON.parse` 编译出来之后放真机上只解析 `.txt`，认都不认 `.json`...
+         // 我敢说开发 Vela 快应用编译器的老哥绝对没干过全栈，甚至前端都没怎么干过，你猜它为什么不叫 `TXT.parse`？🤷‍♀️
+         const uri = `/common/content/${filename}.txt`; // 之前是.json，现在改成.txt才能在真机上跑起来。
+         console.log(`[Detail] Reading: ${uri}`);
          this.gameData.scenes = []; this.choicesMade = []; // Reset here
          console.log(`[Detail] Indices before file read: ${this.currentScene}/${this.currentDialogue}`);
          file.readText({ uri: uri,
