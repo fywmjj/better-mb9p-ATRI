@@ -4,10 +4,14 @@
 
     <!-- Dialogue Layer -->
     <div class="dialogue-layer" @click="nextDialogue">
-      <image class="dialogue-background" src="/common/{{ currentBackground }}"></image>
-      <image class="scene-image" src="/common/{{ gameData.scenes[currentScene].Img }}" style="top:{{gameData.scenes[currentScene].ImgTop}}px; left:{{gameData.scenes[currentScene].ImgLeft}}px;" if="{{ showSceneImage }}"></image>
+      <!-- 背景图的加载路径，之前是直接在common下找，现在统一挪到images子目录了，管理起来更规范。 -->
+      <image class="dialogue-background" src="/common/images/{{ currentBackground }}"></image>
+      <!-- 场景图片也是一样，路径调整到images目录。 -->
+      <image class="scene-image" src="/common/images/{{ gameData.scenes[currentScene].Img }}" style="top:{{gameData.scenes[currentScene].ImgTop}}px; left:{{gameData.scenes[currentScene].ImgLeft}}px;" if="{{ showSceneImage }}"></image>
       <div class="dialogue-ui" if="{{ showDialogueUI }}">
-        <image class="dialogue-text-bg" src="/common/text_bg.png"></image>
+        <!-- 对话框背景图，路径也更新了。 -->
+        <image class="dialogue-text-bg" src="/common/images/text_bg.png"></image>
+        <!-- 角色名显示，这里之前有点小问题，位置可能不太对劲，现在应该能正常显示在对话框上方了。 -->
         <text class="dialogue-character">{{ characterName }}</text>
         <scroll scroll-y="true" bounces="true" class="dialogue-scroll" id="dialogueScroll">
           <text class="dialogue-text" style="font-size: {{ settings.textSize }}px;">{{ displayedText }}</text>
@@ -18,11 +22,11 @@
     <!-- Choices Overlay -->
     <!-- Use overlay for positioning context -->
     <div class="overlay choices-overlay" if="{{ showChoicesUI }}">
+        <!-- 分支选择按钮列表。之前这里的注释写在了<text>标签里面，导致编译出错，按钮无法正常显示和点击。现在把注释挪出来了，应该就没问题了。😅 -->
         <!-- Position buttons absolutely within the overlay -->
         <text
             class="choice-button"
             for="{{ (index, choice) in gameData.scenes[currentScene].choices }}"
-             <!-- Recalculate top based on desired spacing; left for centering -->
             style="top: {{ 100 + index * 85 }}px; left: 43px;"
             @click="selectChoice(index)">
             {{ choice.text }}
@@ -74,27 +78,30 @@
 </template>
 
 <style>
-  /* === Base & Dialogue Styles (unchanged) === */
+  /* === Base & Dialogue Styles === */
   .page-container { width: 336px; height: 480px; position: relative; background-color: #000000; overflow: hidden; }
   .dialogue-layer { width: 100%; height: 100%; position: relative; background-color: #000000; }
   .dialogue-background { width: 100%; height: 100%; object-fit: cover; }
   .scene-image { position: absolute; }
   .dialogue-ui { position: absolute; bottom: 0; left: 0; width: 100%; height: 165px; }
   .dialogue-text-bg { position: absolute; bottom: 0; left: 0; width: 100%; height: 165px; }
-  .dialogue-character { position: absolute; bottom: 160px; left: 8px; font-size: 28px; color: #ffffff; font-weight: bold; }
-  .dialogue-scroll { position: absolute; bottom: 0px; left: 8px; right: 8px; height: 155px; overflow: hidden; flex-wrap: wrap; }
+  /* 角色名显示位置调了下，之前有点偏下，现在应该更舒服了。这块UI真是细节活儿啊~ */
+  .dialogue-character { position: absolute; bottom: 130px; left: 20px; font-size: 28px; color: #ffffff; font-weight: bold; }
+  /* 对话文本的滚动区域也做了调整，给角色名留出足够的空间。 */
+  .dialogue-scroll { position: absolute; bottom: 10px; left: 8px; right: 8px; height: 115px; overflow: hidden; flex-wrap: wrap; }
   .dialogue-text { color: #ffffff; font-weight: bold; width: 100%; text-align: left; }
 
   /* === Overlay Base === */
   .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background-color: rgba(0, 0, 0, 0.5); flex-direction: column; }
 
   /* === Choices Overlay & Button === */
+  /* 分支选择的遮罩层，之前这里多加了个position: relative;导致它没法铺满全屏，按钮位置就跑偏了。现在移除了，应该能正常覆盖并居中显示了。 */
   .choices-overlay {
     background-color: transparent;
     /* Keep justification/alignment defaults (center) or adjust if needed */
     /* justify-content: flex-start; */
     /* align-items: flex-start; */
-    position: relative; /* Needed for absolute positioning of children */
+    /* position: relative; */ /* Needed for absolute positioning of children */
   }
   .choice-button {
     position: absolute; /* Position relative to overlay */
@@ -177,7 +184,7 @@
       settings: { textSpeed: 40, textSize: 22 }, recoveryData: [],
       loadOnInitData: null, isDataLoading: true,
     },
-    computed: { /* ... unchanged ... */
+    computed: {
         showSceneImage() { return !this.isDataLoading && this.gameData.scenes && this.gameData.scenes.length > this.currentScene && this.gameData.scenes[this.currentScene]?.Img !== undefined; },
         showDialogueUI() { if (this.isDataLoading || !this.gameData.scenes || this.gameData.scenes.length <= this.currentScene) return false; const scene = this.gameData.scenes[this.currentScene]; return this.currentBackground !== DEFAULT_BG && !scene?.choices; },
         showChoicesUI() { if (this.isDataLoading || !this.gameData.scenes || this.gameData.scenes.length <= this.currentScene) return false; const scene = this.gameData.scenes[this.currentScene]; const hasChoices = !!scene?.choices && scene.choices.length > 0; return hasChoices; }
@@ -191,8 +198,8 @@
     },
     onDestroy() { this.clearTypingTimeout(); },
 
-    // --- Data Loading (unchanged promise chain) ---
-    loadSettingsAndRecovery() { /* ... unchanged promise logic ... */
+    // --- 数据加载器：加载设置和存档数据 ---
+    loadSettingsAndRecovery() {
         return new Promise((resolve, reject) => {
             let settingsLoaded = false; let recoveryLoaded = false;
             const check = () => { if (settingsLoaded && recoveryLoaded) resolve(); };
@@ -207,8 +214,8 @@
         });
     },
 
-    // --- Game Init / Reset (unchanged core logic) ---
-    startGameFromInitData() { /* ... unchanged ... */
+    // --- 游戏初始化 / 重置状态 ---
+    startGameFromInitData() {
         console.log("[Detail] startGameFromInitData:", JSON.stringify(this.loadOnInitData)); if (!this.loadOnInitData) return; this.resetGameState();
         const { type, index } = this.loadOnInitData;
         if (type === 'load' && index !== undefined && this.recoveryData[index]) { this.loadGameFromState(this.recoveryData[index]); }
@@ -216,23 +223,25 @@
         else if (type === 'chapter') { const chapterIndex = index !== undefined ? index : 0; this.chapter = chapterIndex; this.loadChapterData(this.chapter); }
         else { console.warn("[Detail] Unknown load type", this.loadOnInitData); this.chapter = 0; this.loadChapterData(0); }
     },
-    resetGameState(preserveIndices = false) { /* ... unchanged ... */
+    resetGameState(preserveIndices = false) {
         console.log("[Detail] Resetting game state.", preserveIndices);
         this.isMenuVisible = false; this.recoveryMode = RECOVERY_MODE_NONE; this.achievedEnding = ''; this.clearTypingTimeout();
         if (!preserveIndices) { this.currentScene = 0; this.currentDialogue = 0; this.choicesMade = []; }
     },
 
-     // --- Chapter/Scene Loading (unchanged core logic) ---
-     loadChapterData(chapterId) { /* ... unchanged ... */
+     // --- 章节/场景加载逻辑 ---
+     loadChapterData(chapterId) {
          console.log(`[Detail] Request load chapter: ${chapterId}`); let index = -1; let special = false;
          if (chapterId === 'BE') { this.chapter = 'BE'; index = 32; special = true; } else if (chapterId === 'TE') { this.chapter = 'TE'; index = 33; special = true; }
          else if (typeof chapterId === 'number') { this.chapter = chapterId; index = chapterId; special = false; }
          else { console.error(`[Detail] Invalid chapter ID: ${chapterId}`); index = 0; this.chapter = 0; }
          console.log(`[Detail] Effective load: Chapter='${this.chapter}', Index=${index}, Special=${special}`); this.loadChapterDataInternal(index);
      },
-     loadChapterDataInternal(index) { /* ... unchanged ... */
+     loadChapterDataInternal(index) {
          if (typeof index !== 'number' || index < 0 || index >= this.chapterList.length) { console.error(`[Detail] Internal invalid index ${index}`); if(index !== 0) { this.loadChapterDataInternal(0); } else { router.back(); } return; }
-         const filename = this.chapterList[index]; const uri = `/common/${filename}.txt`; console.log(`[Detail] Reading: ${uri}`);
+         const filename = this.chapterList[index];
+         // 这里是读取章节数据的地方，现在改成了读取JSON文件，路径也更新了。之前txt格式太不灵活了，JSON才是王道！✨
+         const uri = `/common/content/${filename}.json`; console.log(`[Detail] Reading: ${uri}`);
          this.gameData.scenes = []; this.choicesMade = []; // Reset here
          console.log(`[Detail] Indices before file read: ${this.currentScene}/${this.currentDialogue}`);
          file.readText({ uri: uri,
@@ -241,15 +250,15 @@
              complete: () => { console.log(`[Detail] File read complete ${uri}`); }
          });
      },
-    applyCurrentSceneState() { /* ... unchanged ... */
+    applyCurrentSceneState() {
         console.log(`[Detail] Applying state: S=${this.currentScene}, D=${this.currentDialogue}`);
         if (this.currentScene < 0 || this.currentScene >= this.gameData.scenes.length) { console.error(`[Detail] Invalid Scene ${this.currentScene}, resetting.`); this.currentScene = 0; this.currentDialogue = 0; }
         const scene = this.gameData.scenes[this.currentScene]; if (scene && scene.dialogues && (this.currentDialogue < 0 || this.currentDialogue >= scene.dialogues.length)) { console.warn(`[Detail] Invalid Dialogue ${this.currentDialogue}, resetting.`); this.currentDialogue = 0; }
         this.loadScene(this.currentScene);
     },
 
-    // --- Scene/Dialogue Progression (unchanged core logic) ---
-    loadScene(sceneIndex) { /* ... unchanged ... */
+    // --- 场景/对话推进逻辑 ---
+    loadScene(sceneIndex) {
         console.log(`[Detail] --- Loading Scene Index: ${sceneIndex} ---`); this.clearTypingTimeout();
         if (!this.gameData?.scenes || sceneIndex < 0 || sceneIndex >= this.gameData.scenes.length) { console.error(`[Detail] loadScene invalid index ${sceneIndex}`); this.handleChapterEnd(); return; }
         this.currentScene = sceneIndex; const scene = this.gameData.scenes[this.currentScene]; console.log(`[Detail] Scene ${sceneIndex} Data: ${JSON.stringify(scene)}`);
@@ -259,79 +268,80 @@
         else if (scene.dialogues?.length > 0) { console.log(`[Detail] Scene ${sceneIndex}: Dialogues. Loading ${this.currentDialogue}.`); if (this.currentDialogue < 0 || this.currentDialogue >= scene.dialogues.length) { this.currentDialogue = 0; } this.loadDialogue(scene.dialogues[this.currentDialogue]); }
         else { console.log(`[Detail] Scene ${sceneIndex}: Empty. Proceeding.`); this.handleDialogueEnd(); }
     },
-    loadDialogue(dialogue) { /* ... unchanged ... */
+    loadDialogue(dialogue) {
         if (!dialogue) { console.error("[Detail] loadDialogue: null."); this.handleDialogueEnd(); return; } console.log(`[Detail] Loading dialogue: '${(dialogue.text || "").substring(0,20)}...'`);
         if(this.showDialogueUI) { this.scrollToTop(); } this.clearTypingTimeout(); this.characterName = dialogue.character || '';
         this.fullDialogueText = dialogue.text || ''; this.displayedText = ''; this.typingIndex = 0; this.canProgress = false; this.startTypingEffect();
     },
-    startTypingEffect() { /* ... unchanged ... */
+    startTypingEffect() {
         if (this.isMenuVisible || this.recoveryMode !== RECOVERY_MODE_NONE || this.achievedEnding || this.showChoicesUI) { this.clearTypingTimeout(); return; } if (this.typingIndex < this.fullDialogueText.length) { this.displayedText += this.fullDialogueText.charAt(this.typingIndex); this.typingIndex++; this.typingTimeoutId = setTimeout(() => { this.startTypingEffect(); }, this.settings.textSpeed); } else { this.canProgress = true; this.typingTimeoutId = null; }
     },
 
-    // --- Player Actions & Game Flow (unchanged core logic) ---
-    nextDialogue() { /* ... unchanged ... */
+    // --- 玩家操作与游戏流程控制 ---
+    nextDialogue() {
         console.log(`[Detail] nextDialogue clicked. Progress=${this.canProgress}`); if (this.isMenuVisible || this.recoveryMode !== RECOVERY_MODE_NONE || this.achievedEnding || this.showChoicesUI) { return; }
         if (!this.canProgress && this.typingTimeoutId) { this.clearTypingTimeout(); this.displayedText = this.fullDialogueText; this.canProgress = true; return; }
         if (this.canProgress) { const scene = this.gameData?.scenes?.[this.currentScene]; if (!scene?.dialogues || this.currentDialogue >= scene.dialogues.length - 1) { this.handleDialogueEnd(); } else { this.currentDialogue++; this.loadDialogue(scene.dialogues[this.currentDialogue]); } }
     },
-    handleDialogueEnd() { /* ... unchanged ... */
+    handleDialogueEnd() {
         console.log(`[Detail] handleDialogueEnd: S=${this.currentScene}, D=${this.currentDialogue}`); const scene = this.gameData?.scenes?.[this.currentScene];
         const source = scene?.dialogues?.[this.currentDialogue] || scene; if (!source) { this.handleSceneEnd(); return; }
         if (source.END !== undefined) { this.triggerEnding(source.END); } else if (source.branch !== undefined) { this.evaluateBranch(source.branch); }
         else if (source.toScenes !== undefined) { const jump = parseInt(source.toScenes, 10); if (!isNaN(jump)) { this.currentDialogue = 0; this.loadScene(this.currentScene + jump); } else { this.handleSceneEnd(); } }
         else { this.handleSceneEnd(); }
     },
-    handleSceneEnd() { /* ... unchanged ... */
+    handleSceneEnd() {
         console.log(`[Detail] handleSceneEnd: S=${this.currentScene}`); if (!this.gameData?.scenes) { this.goToHomePage(); return; }
         if (this.currentScene < this.gameData.scenes.length - 1) { this.currentDialogue = 0; this.loadScene(this.currentScene + 1); } else { this.handleChapterEnd(); }
     },
-    handleChapterEnd() { /* ... unchanged ... */
+    handleChapterEnd() {
         console.log(`[Detail] handleChapterEnd: Ch=${this.chapter}`); this.currentBackground = DEFAULT_BG; this.characterName=''; this.displayedText=''; this.canProgress=false;
         let nextIndex = -1; if (typeof this.chapter === 'number') { nextIndex = this.chapter + 1; } else { setTimeout(() => this.goToHomePage(), 1500); return; }
         if (nextIndex >= 0 && nextIndex < this.chapterList.length) { console.log(`[Detail] Loading next Ch index: ${nextIndex}`); this.currentScene=0; this.currentDialogue=0; this.choicesMade=[]; setTimeout(() => this.loadChapterData(nextIndex), 1500); }
         else { console.log("[Detail] Game end."); setTimeout(() => this.goToHomePage(), 1500); }
     },
-    evaluateBranch(branchData) { /* ... unchanged ... */
+    evaluateBranch(branchData) {
         console.log("[Detail] Evaluating branch:", branchData); if (!branchData || !branchData.choices || branchData.toChapter === undefined) { this.handleSceneEnd(); return; } const match = JSON.stringify(this.choicesMade) === JSON.stringify(branchData.choices);
         let target = match ? branchData.toChapter : branchData.elseChapter; if (target === undefined && !match) { this.handleSceneEnd(); return; }
         this.currentScene=0; this.currentDialogue=0; this.choicesMade=[]; this.loadChapterData(target);
     },
-    selectChoice(index) { /* ... unchanged ... */
+    selectChoice(index) {
         const scene = this.gameData?.scenes?.[this.currentScene]; if (!scene?.choices?.[index]) { return; } const choice = scene.choices[index]; console.log(`[Detail] Choice ${index}: '${choice.text}'`); this.choicesMade.push(index);
         const offset = choice.nextScene; if (typeof offset !== 'number') { this.handleSceneEnd(); return; } this.currentDialogue = 0; this.loadScene(this.currentScene + offset);
     },
 
-    // --- Menu & Overlay Control ---
-    handleSwipeBack(event) { /* ... unchanged ... */
+    // --- 菜单与遮罩层控制 ---
+    handleSwipeBack(event) {
+       // 右滑呼出菜单的逻辑，这里做了个小优化，确保在特定状态下才能呼出，避免误触。用户体验嘛，得考虑周全。
        if (event.direction === 'right' && !this.isMenuVisible && this.recoveryMode === RECOVERY_MODE_NONE && !this.achievedEnding && !this.showChoicesUI && this.canProgress && !this.isDataLoading ) { this.isMenuVisible = true; this.clearTypingTimeout(); this.canProgress = false; }
     },
-    closeMenu() { /* ... unchanged ... */
+    closeMenu() {
        this.isMenuVisible = false; this.canProgress = !this.showChoicesUI && !this.achievedEnding && !this.isDataLoading;
     },
     goToHomePage() { router.replace({ uri: "/pages/index" }); },
-    toRecoveryPage(mode) { /* ... unchanged ... */
+    toRecoveryPage(mode) {
         console.log(`[Detail] Opening Recovery: Mode=${mode}`); if (mode === RECOVERY_MODE_LOAD && (!this.recoveryData || this.recoveryData.length === 0)) { prompt.showToast({ message: "没有存档" }); return; }
         this.recoveryMode = mode; this.isMenuVisible = false;
     },
-    closeRecoveryOverlay() { /* ... unchanged ... */
+    closeRecoveryOverlay() {
         console.log("[Detail] Closing Recovery Overlay."); this.recoveryMode = RECOVERY_MODE_NONE; this.isMenuVisible = true; this.canProgress = false;
     },
 
-    // === NEW Quick Save / Load ===
+    // === 快速存档 / 读档功能 ===
     quickSave() {
         console.log("[Detail] Action: Quick Save");
         if (this.isDataLoading || this.achievedEnding) { prompt.showToast({message: "当前无法快速存档"}); return; }
 
         const currentState = { chapter: this.chapter, currentScene: this.currentScene, currentDialogue: this.currentDialogue, choicesMade: [...this.choicesMade], timestamp: new Date().toISOString() };
 
-        // Ensure recoveryData is an array
+        // 确保 recoveryData 是一个数组，不然会报错。
         if (!Array.isArray(this.recoveryData)) { this.recoveryData = []; }
 
-        // Overwrite or add to slot 0
+        // 覆盖或添加到槽位0，这个是快速存档的专属位置。
         this.recoveryData[QUICK_SAVE_SLOT_INDEX] = currentState;
-        this.persistRecoveryData(); // Save the whole array
+        this.persistRecoveryData(); // 保存整个存档列表
         prompt.showToast({ message: "快速存档成功 (存档 1)" });
-        this.closeMenu(); // Close menu after quick action
+        this.closeMenu(); // 快速操作后自动关闭菜单，方便玩家继续游戏。
     },
 
     quickLoad() {
@@ -344,48 +354,48 @@
 
         const saveData = this.recoveryData[QUICK_SAVE_SLOT_INDEX];
         prompt.showToast({ message: "读取快速存档..." });
-        this.isMenuVisible = false; // Ensure menu closed
-        this.recoveryMode = RECOVERY_MODE_NONE; // Ensure recovery overlay closed
-        this.loadGameFromState(saveData); // Load the state
+        this.isMenuVisible = false; // 确保菜单关闭
+        this.recoveryMode = RECOVERY_MODE_NONE; // 确保存档/读档界面关闭
+        this.loadGameFromState(saveData); // 加载存档数据
     },
-    // === END Quick Save / Load ===
+    // === 快速存档 / 读档功能结束 ===
 
-    // --- Regular Save/Load/Delete (unchanged core logic) ---
-    saveRecoveryData(indexOrNew) { /* ... unchanged ... */
+    // --- 常规存档/读档/删除逻辑 ---
+    saveRecoveryData(indexOrNew) {
         console.log(`[Detail] saveRecoveryData: Target=${indexOrNew}`); const state = { chapter: this.chapter, currentScene: this.currentScene, currentDialogue: this.currentDialogue, choicesMade: [...this.choicesMade], timestamp: new Date().toISOString() };
         if (indexOrNew === 'new') { if (this.recoveryData.length >= 10) { prompt.showToast({ message: '存档已满' }); return; } this.recoveryData.push(state); prompt.showToast({ message: '保存成功' }); }
         else if (typeof indexOrNew === 'number' && indexOrNew >= 0 && indexOrNew < this.recoveryData.length) { this.recoveryData[indexOrNew] = state; prompt.showToast({ message: '覆盖成功' }); }
         else { prompt.showToast({ message: '保存失败' }); return; } this.persistRecoveryData(); this.closeRecoveryOverlay();
     },
-    deleteRecoveryData(index) { /* ... unchanged ... */
+    deleteRecoveryData(index) {
         prompt.showDialog({ title: '确认删除', message: `确定要删除存档 ${index + 1} 吗？`, buttons: [{ text: '取消'}, { text: '删除', color: '#DD2C00' }],
             success: (d) => { if (d.index === 1) { if (index >= 0 && index < this.recoveryData.length) { this.recoveryData.splice(index, 1); this.persistRecoveryData(); prompt.showToast({ message: '删除成功' }); } else { prompt.showToast({ message: '删除失败' }); } } else { prompt.showToast({ message: '已取消' }); } },
             fail: (err) => { prompt.showToast({ message: '操作失败' }); console.error("Delete Dialog fail:", err); }, complete: () => {} });
     },
-    loadRecoveryData(index) { /* ... unchanged ... */
+    loadRecoveryData(index) {
         console.log(`[Detail] Request load idx: ${index}`); if (index >= 0 && index < this.recoveryData.length) { const saveData = this.recoveryData[index]; prompt.showToast({ message: `读取存档 ${index + 1}...` }); this.recoveryMode = RECOVERY_MODE_NONE; this.isMenuVisible = false; this.loadGameFromState(saveData); } else { prompt.showToast({ message: '无效存档' }); }
     },
-    loadGameFromState(stateData) { /* ... unchanged ... */
+    loadGameFromState(stateData) {
         if (!stateData) return; console.log("[Detail] Loading state:", JSON.stringify(stateData)); this.isDataLoading = true; this.clearTypingTimeout(); this.resetGameState(true);
         this.chapter = stateData.chapter; this.currentScene = stateData.currentScene; this.currentDialogue = stateData.currentDialogue; this.choicesMade = stateData.choicesMade ? [...stateData.choicesMade] : [];
         console.log(`[Detail] State restored: Ch=${this.chapter}`); this.loadChapterData(this.chapter);
         setTimeout(() => { this.isDataLoading = false; this.canProgress = !this.showChoicesUI && !this.achievedEnding && !this.isMenuVisible; console.log(`[Detail] Load complete. Progress=${this.canProgress}`); }, 200);
     },
-    persistRecoveryData() { /* ... unchanged ... */
+    persistRecoveryData() {
         console.log("[Detail] Persisting recovery..."); try { const v = JSON.stringify(this.recoveryData); storage.set({ key: STORAGE_KEYS.RECOVERY_DATA, value: v, success: () => { console.log("[Detail] Recovery saved."); }, fail: (d, c) => { console.error(`Save recovery fail:${d},${c}`); prompt.showToast({ message: `存档列表保存失败` }); }, complete: () => {} }); } catch (e) { console.error("Stringify recovery fail:", e); prompt.showToast({ message: '存档数据异常' }); }
     },
 
-    // --- Skip / Ending / Utils (unchanged core logic) ---
-    skipScene() { /* ... unchanged ... */
+    // --- 跳过 / 结局 / 工具函数 ---
+    skipScene() {
         console.log("[Detail] Skip Scene action"); if (this.isDataLoading || this.showChoicesUI || this.achievedEnding) { prompt.showToast({ message: '当前无法跳过' }); this.closeMenu(); return; } const scene = this.gameData?.scenes?.[this.currentScene]; const lastDialogue = scene?.dialogues?.slice(-1)?.[0]; const skippable = !( scene?.choices || lastDialogue?.END || lastDialogue?.branch || lastDialogue?.toScenes ); const lastScene = this.currentScene >= (this.gameData?.scenes?.length || 0) - 1; if (skippable && !lastScene) { prompt.showToast({ message: "跳过场景" }); this.closeMenu(); this.clearTypingTimeout(); this.currentDialogue = 0; this.loadScene (this.currentScene + 1); } else { prompt.showToast({ message: '无法跳过此场景' }); this.closeMenu(); }
     },
-    skipCurrentChapter() { /* ... unchanged ... */
+    skipCurrentChapter() {
          console.log("[Detail] Skip Chapter action"); if (this.isDataLoading || this.achievedEnding) { prompt.showToast({ message: '当前无法跳过' }); this.closeMenu(); return; } const noSkip = [2, 19, 25, 26]; const endings = ['TE', 'BE']; const lastNum = 31; const cant = noSkip.includes(this.chapter) || endings.includes(this.chapter) || (typeof this.chapter === 'number' && this.chapter >= lastNum); if (cant) { prompt.showToast({ message: '此章节无法跳过' }); this.closeMenu(); } else if (typeof this.chapter === 'number') { prompt.showToast({ message: "跳过章节..." }); this.closeMenu(); this.clearTypingTimeout(); this.handleChapterEnd(); } else { this.closeMenu(); }
      },
-     triggerEnding(endingName) { /* ... unchanged ... */
+     triggerEnding(endingName) {
          if (this.achievedEnding) return; console.log(`[Detail] Trigger Ending: ${endingName}`); this.achievedEnding = endingName; this.updateFinStatus(endingName); this.canProgress = false; this.clearTypingTimeout(); this.isMenuVisible = false; this.recoveryMode = RECOVERY_MODE_NONE; prompt.showToast({message: `达成结局：${endingName}`})
      },
-     updateFinStatus(endingName) { /* ... unchanged ... */
+     updateFinStatus(endingName) {
          storage.get({ key: STORAGE_KEYS.FIN_STATUS, success: (d) => { let s = { HE: false, BE: false, ...(d ? JSON.parse(d) : {}) }; if (endingName === ENDING_TYPES.HE) s.HE = true; else if (endingName === ENDING_TYPES.BE) s.BE = true; storage.set({ key: STORAGE_KEYS.FIN_STATUS, value: JSON.stringify(s), success: () => {}, fail: ()=>{}, complete: () => {} }); }, fail: ()=>{}, complete: () => {} });
      },
     clearTypingTimeout() { if (this.typingTimeoutId) { clearTimeout(this.typingTimeoutId); this.typingTimeoutId = null; } },

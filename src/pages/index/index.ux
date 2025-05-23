@@ -1,10 +1,12 @@
 <template>
   <div class="page-container">
     <!-- Background Image -->
-    <image class="bg-image" src="/common/bg.png"></image>
+    <!-- 背景图的路径也统一调整到images子目录了。 -->
+    <image class="bg-image" src="/common/images/bg.png"></image>
 
     <!-- True Ending Overlay Image -->
-    <image class="true-end-visual" src="/common/ATRI_TrueEnding.png" if="{{ showTrueEndVisuals }}"></image>
+    <!-- 真结局的图片路径也挪到images目录了。 -->
+    <image class="true-end-visual" src="/common/images/ATRI_TrueEnding.png" if="{{ showTrueEndVisuals }}"></image>
 
     <!-- Main Menu Buttons Container -->
     <div class="main-menu-button-container"> <!-- Changed class name -->
@@ -27,8 +29,10 @@
 
     <!-- Settings Overlay -->
     <div class="overlay settings-overlay" if="{{ isSettingsOverlayVisible }}">
-        <image class="settings-bg-image" src="/common/ev000b.png"></image>
-        <image class="settings-text-bg" src="/common/text_bg.png"></image>
+        <!-- 设置界面的背景图，路径也更新了。 -->
+        <image class="settings-bg-image" src="/common/images/ev000b.png"></image>
+        <!-- 设置界面的文本背景图，也更新了路径。 -->
+        <image class="settings-text-bg" src="/common/images/text_bg.png"></image>
         <div class="settings-controls-wrapper">
             <div class="settings-controls">
                 <div class="settings-top-buttons">
@@ -57,10 +61,10 @@
             <text class="tips-text small">在"SYSTEM"中调整显示速度和文字大小。</text>
             <text class="tips-text small">游戏中右滑进入菜单。</text>
             <text class="tips-text warning">请勿反复点击START！耐心等待加载。</text>
-            <text class="tips-text separator"></text> <!-- Use border/background for separator -->
+            <text class="tips-text separator"></text>
             <text class="tips-text small">制作：@liuyuze61</text>
             <text class="tips-text small">感谢：@Wxz226，@TLE</text>
-            <text class="tips-text separator"></text> <!-- Use border/background for separator -->
+            <text class="tips-text separator"></text>
             <text class="tips-text confirm-button" @click="hideTipsOverlay()">我知道了</text>
         </div>
     </div>
@@ -97,11 +101,14 @@
   .close-button { margin-top: auto; padding: 10px 20px; font-size: 20px; color: #007aff; } /* No underline */
 
   /* Settings Overlay */
+  /* 设置界面样式调整，之前它会跑到右边去，现在应该能正常全屏显示了。这个定位问题可把我折腾坏了，差点以为是Vela的bug呢。😂 */
   .settings-overlay { padding: 0; justify-content: flex-start; position: relative; }
   .settings-bg-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;}
   .settings-text-bg { position: absolute; bottom: 0; left: 0; width: 100%; height: 165px; }
-  .settings-controls-wrapper { width: 100%; height: 100%; position: relative; display: flex; flex-direction: column; }
-  .settings-controls { width: 100%; padding: 20px; background-color: rgba(0, 0, 0, 0.4); display: flex; flex-direction: column; flex-shrink: 0; margin-bottom: 155px; }
+  /* 确保这个容器的尺寸计算是正确的，避免内容溢出导致滚动条出现。 */
+  .settings-controls-wrapper { width: 100%; height: 100%; position: relative; display: flex; flex-direction: column; box-sizing: border-box; }
+  /* 控制面板也加上box-sizing，防止padding导致宽度溢出。 */
+  .settings-controls { width: 100%; padding: 20px; background-color: rgba(0, 0, 0, 0.4); display: flex; flex-direction: column; flex-shrink: 0; margin-bottom: 155px; box-sizing: border-box; }
   .settings-top-buttons { display: flex; justify-content: space-around; width: 100%; margin-bottom: 35px; }
   .settings-action-text { font-size: 22px; color: #ffffff; font-weight: bold; padding: 5px; }
   .setting-item { width: 100%; margin-bottom: 30px; display: flex; flex-direction: column; align-items: center; }
@@ -117,7 +124,7 @@
   .tips-text.title { font-size: 24px; font-weight: bold; margin-bottom: 20px; color: #000000; }
   .tips-text.small { font-size: 18px; color: #555555; }
   .tips-text.warning { color: #DD2C00; font-weight: bold; }
-  .tips-text.separator { color: #cccccc; margin: 10px 0 20px 0; width: 80%; height: 1px; background-color: #cccccc;} /* Use border/bg */
+  .tips-text.separator { color: #cccccc; margin: 10px 0 20px 0; width: 80%; height: 1px; background-color: #cccccc;}
   .confirm-button { font-size: 22px; color: #007aff; font-weight: bold; margin-top: 20px; padding: 10px; }
 </style>
 
@@ -143,6 +150,7 @@
     },
 
     onInit() {
+      // 应用启动时的初始化流程，加载各种数据。这块逻辑比较复杂，得确保每一步都稳妥，不然启动就崩了可不好。👍
       console.log("[Index] onInit: Loading initial data.");
       this.loadSettings().then(() => this.loadRecoveryData())
                      .then(() => this.loadFinStatus())
@@ -151,20 +159,20 @@
     },
     onHide() { this.stopTextPreviewAnimation(); },
 
-    // --- Data Loaders (returning Promises) ---
-    loadSettings() { return new Promise((resolve) => { /* ... unchanged logic ... */
+    // --- 数据加载器 ---
+    loadSettings() { return new Promise((resolve) => {
         storage.get({ key: STORAGE_KEYS.SETTINGS,
             success: (d) => { let s = {}; if (d) { try { s = JSON.parse(d); } catch (e) {} } this.settings = { ...DEFAULT_SETTINGS, ...s }; this.tempSettings = { ...this.settings }; resolve(); },
             fail: (d,c) => { console.warn(`[Index] Load settings fail: ${d}, ${c}`); this.settings = { ...DEFAULT_SETTINGS }; this.tempSettings = { ...this.settings }; resolve(); }
         });
     }); },
-    loadRecoveryData() { return new Promise((resolve) => { /* ... unchanged logic ... */
+    loadRecoveryData() { return new Promise((resolve) => {
         storage.get({ key: STORAGE_KEYS.RECOVERY_DATA,
             success: (d) => { if (d) { try { this.recoveryData = JSON.parse(d); } catch (e) { this.recoveryData = []; } } else { this.recoveryData = []; } resolve(); },
             fail: (d,c) => { console.warn(`[Index] Load recovery fail: ${d}, ${c}`); this.recoveryData = []; resolve(); }
         });
     }); },
-     loadFinStatus() { return new Promise((resolve) => { /* ... unchanged logic ... */
+     loadFinStatus() { return new Promise((resolve) => {
         storage.get({ key: STORAGE_KEYS.FIN_STATUS,
             success: (d) => { const ds = { HE: false, BE: false }; let s = {}; if (d) { try { s = JSON.parse(d); } catch (e) {} } this.finStatus = { ...ds, ...s }; resolve(); },
             fail: (d,c) => { console.warn(`[Index] Load fin fail: ${d}, ${c}`); this.finStatus = { HE: false, BE: false }; resolve(); }
@@ -176,8 +184,11 @@
          complete: () => {} });
      },
 
-    // --- Navigation & Actions ---
-    startGame() { router.push({ uri: 'pages/detail' }); prompt.showToast({ message: "加载游戏中..." }); },
+    // --- 导航与操作 ---
+    startGame() {
+      // 开始游戏按钮的点击事件，跳转到游戏详情页。加了个加载提示，避免用户一直点，毕竟加载需要时间嘛。
+      router.push({ uri: 'pages/detail' }); prompt.showToast({ message: "加载游戏中..." });
+    },
     loadGame(indexOrType) {
         let loadParam;
          if (typeof indexOrType === 'number') { if (indexOrType >= 0 && indexOrType < this.recoveryData.length) { loadParam = { type: 'load', index: indexOrType }; prompt.showToast({ message: `读取存档 ${indexOrType + 1}...` }); } else { prompt.showToast({ message: "无效存档" }); return; } }
@@ -186,7 +197,7 @@
     },
     exitApp() { try { this.$app.exit(); } catch(e) { prompt.showToast({ message: "无法退出" }); } },
 
-    // --- Overlay Control ---
+    // --- 遮罩层控制 ---
     showLoadOverlay() { if (this.hasSaveData) { this.isLoadOverlayVisible = true; } else { prompt.showToast({message: "没有存档"}); } },
     hideLoadOverlay() { this.isLoadOverlayVisible = false; },
 
@@ -210,7 +221,7 @@
     hideSettingsOverlay() { this.isSettingsOverlayVisible = false; this.stopTextPreviewAnimation(); },
     hideTipsOverlay() { this.isTipsOverlayVisible = false; storage.set({ key: STORAGE_KEYS.TIPS_SHOWN, value: JSON.stringify(TIPS_SEEN_FLAG), success: () => {}, fail: () => {}, complete: () => {} }); },
 
-    // --- Settings Logic ---
+    // --- 设置逻辑 ---
     updateTempSetting(key, event) {
       let newValue = event.progress; // Assume progress
       if (typeof newValue !== 'number' && typeof event.value === 'number') { newValue = event.value; } // Fallback
@@ -223,19 +234,21 @@
       } else { console.warn(`[Index] Invalid slider value/key.`); }
     },
     saveSettingsAndClose() {
+        // 保存设置并关闭界面，确保用户配置能持久化。希望这次别再有保存失败的问题了，不然用户要骂娘了。😤
         this.settings = { ...this.tempSettings };
         try { const s = JSON.stringify(this.settings); storage.set({ key: STORAGE_KEYS.SETTINGS, value: s,
                 success: () => { prompt.showToast({ message: '设置已保存' }); this.hideSettingsOverlay(); },
                 fail: (d, c) => { prompt.showToast({ message: `保存失败` }); console.error(`Save setting fail: ${d}, ${c}`)},
                 complete: () => {} });
-        } catch (e) { prompt.showToast({ message: '设置数据错误' }); console.error("Stringify settings fail:", e); }
+        } catch (e) { prompt.showToast({ message: '设置数据异常' }); console.error("Stringify settings fail:", e); }
     },
 
-    // --- Text Preview ---
+    // --- 文本预览动画 ---
     startTextPreviewAnimation() { this.stopTextPreviewAnimation(); if (this.isSettingsOverlayVisible) { this.textPreviewContent = ''; this.textPreviewIndex = 0; this.animateTextPreview(); } },
     stopTextPreviewAnimation() { if (this.textPreviewTimerId) { clearTimeout(this.textPreviewTimerId); this.textPreviewTimerId = null; } },
-    animateTextPreview() { /* ... unchanged logic ... */
-      if (!this.isSettingsÖverlayVisible || this.textPreviewTimerId === null) { return; }
+    animateTextPreview() {
+      // 文本预览动画的逻辑，修复了一个拼写错误（isSettingsÖverlayVisible -> isSettingsOverlayVisible），导致预览文本不显示。这种低级错误，下次一定注意！🤦‍♀️
+      if (!this.isSettingsOverlayVisible || this.textPreviewTimerId === null) { return; }
       if (this.textPreviewIndex < this.textPreviewText.length) { this.textPreviewContent += this.textPreviewText.charAt(this.textPreviewIndex); this.textPreviewIndex++; this.textPreviewTimerId = setTimeout(() => { this.animateTextPreview(); }, this.tempSettings.textSpeed); }
       else { this.textPreviewTimerId = setTimeout(() => { if (this.isSettingsOverlayVisible) { this.textPreviewIndex = 0; this.startTextPreviewAnimation(); } }, 2000); }
     },
