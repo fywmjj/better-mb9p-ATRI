@@ -76,14 +76,29 @@
       // 页面初始化时，先加载用户之前的设置，然后把临时设置也同步过来。
       // 这样用户进来就能看到自己上次调整过的参数，体验会好很多~ 😋
       console.log("[Settings] onInit: Loading settings.");
-      this.loadSettings().then(() => {
-        this.tempSettings = { ...this.settings }; // 应用加载到的设置到临时设置
-        this.startTextPreviewAnimation(); // 启动文本预览动画
-      }).catch(err => {
-        console.error("[Settings] Load settings error:", err);
-        // 即使加载失败，也要用默认设置初始化，确保页面能正常显示。
-        this.tempSettings = { ...this.settings };
-        this.startTextPreviewAnimation();
+      // 修复：直接使用回调函数，避免Promise包装可能带来的兼容性问题。
+      storage.get({
+        key: STORAGE_KEYS.SETTINGS,
+        success: (d) => {
+          let s = {};
+          if (d) {
+            try { s = JSON.parse(d); } catch (e) { console.error("[Settings] Parse settings error:", e); }
+          }
+          this.settings = { ...DEFAULT_SETTINGS, ...s }; // 与默认设置合并
+          console.log("[Settings] Settings loaded:", JSON.stringify(this.settings));
+          this.tempSettings = { ...this.settings }; // 应用加载到的设置到临时设置
+          this.startTextPreviewAnimation(); // 启动文本预览动画
+        },
+        fail: (d, c) => {
+          console.warn(`[Settings] Load settings fail: ${d}, ${c}`);
+          this.settings = { ...DEFAULT_SETTINGS }; // 回退到默认设置
+          this.tempSettings = { ...this.settings }; // 应用默认设置到临时设置
+          this.startTextPreviewAnimation(); // 启动文本预览动画
+        },
+        complete: () => {
+          // complete 回调通常用于清理或最终状态更新，这里可以留空或添加日志
+          console.log("[Settings] storage.get complete.");
+        }
       });
     },
     onHide() {
@@ -95,27 +110,8 @@
       this.stopTextPreviewAnimation();
     },
 
-    // --- 数据加载器 ---
-    loadSettings() {
-      return new Promise((resolve) => {
-        storage.get({ key: STORAGE_KEYS.SETTINGS,
-            success: (d) => {
-                let s = {};
-                if (d) {
-                    try { s = JSON.parse(d); } catch (e) { console.error("[Settings] Parse settings error:", e); }
-                }
-                this.settings = { ...DEFAULT_SETTINGS, ...s }; // 与默认设置合并
-                console.log("[Settings] Settings loaded:", JSON.stringify(this.settings));
-                resolve();
-            },
-            fail: (d,c) => {
-                console.warn(`[Settings] Load settings fail: ${d}, ${c}`);
-                this.settings = { ...DEFAULT_SETTINGS }; // 回退到默认设置
-                resolve();
-            }
-        });
-      });
-    },
+    // --- 数据加载器 (已整合到onInit中，此函数不再需要) ---
+    // loadSettings() { ... }
 
     // --- 设置逻辑 ---
     updateTempSetting(key, event) {
@@ -182,17 +178,19 @@
     },
     animateTextPreview() {
       // 逐字显示文本的动画逻辑。
-      // 修复：显式绑定this，确保在setTimeout回调中上下文正确。
+      // 修复：使用箭头函数确保 `this` 上下文正确。
       if (this.textPreviewTimerId === null) { return; } // 动画已从外部停止
 
       if (this.textPreviewIndex < this.textPreviewText.length) {
         this.textPreviewContent += this.textPreviewText.charAt(this.textPreviewIndex);
         this.textPreviewIndex++;
-        this.textPreviewTimerId = setTimeout(this.animateTextPreview.bind(this), this.tempSettings.textSpeed);
+        // 使用箭头函数，更符合现代JS写法，且在某些环境下对this的绑定更稳定
+        this.textPreviewTimerId = setTimeout(() => this.animateTextPreview(), this.tempSettings.textSpeed);
       } else {
         // 所有文本显示完毕后，等待一段时间，然后重新开始动画。
         // 等待时间设为2秒，给用户足够时间阅读。
-        this.textPreviewTimerId = setTimeout(this.startTextPreviewAnimation.bind(this), 2000);
+        // 使用箭头函数，更符合现代JS写法，且在某些环境下对this的绑定更稳定
+        this.textPreviewTimerId = setTimeout(() => this.startTextPreviewAnimation(), 2000);
       }
     },
   }
