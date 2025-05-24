@@ -6,6 +6,7 @@
 
     <!-- True Ending Overlay Image -->
     <!-- 真结局的图片路径也挪到images目录了。 -->
+    <!-- 修复：现在只要达成Happy Ending，就会显示真结局视觉效果。 -->
     <image class="true-end-visual" src="/common/images/ATRI_TrueEnding.png" if="{{ showTrueEndVisuals }}"></image>
 
     <!-- Main Menu Buttons Container -->
@@ -98,7 +99,9 @@
       isLoadOverlayVisible: false, isTipsOverlayVisible: false,
     },
     computed: {
-        showTrueEndVisuals() { return this.finStatus && this.finStatus.HE === true && this.finStatus.BE === true; },
+        // 修复：现在只要达成Happy Ending (HE)，就显示TRUE END按钮和图片。
+        // 之前需要同时达成HE和BE才显示，可能不符合预期。
+        showTrueEndVisuals() { return this.finStatus && this.finStatus.HE === true; },
         hasSaveData() { return this.recoveryData && this.recoveryData.length > 0; }
     },
 

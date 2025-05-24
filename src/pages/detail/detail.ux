@@ -8,11 +8,13 @@
       <image class="dialogue-background" src="/common/images/{{ currentBackground }}"></image>
       <!-- 场景图片也是一样，路径调整到images目录。 -->
       <image class="scene-image" src="/common/images/{{ gameData.scenes[currentScene].Img }}" style="top:{{gameData.scenes[currentScene].ImgTop}}px; left:{{gameData.scenes[currentScene].ImgLeft}}px;" if="{{ showSceneImage }}"></image>
+
+      <!-- 角色名现在独立出来，不再占用文本框内部空间，并且和文本左对齐了。这样看起来更舒服。 -->
+      <text class="dialogue-character" if="{{ showDialogueUI }}">{{ characterName }}</text>
+
       <div class="dialogue-ui" if="{{ showDialogueUI }}">
         <!-- 对话框背景图，路径也更新了。 -->
         <image class="dialogue-text-bg" src="/common/images/text_bg.png"></image>
-        <!-- 角色名显示，这里之前有点小问题，位置可能不太对劲，现在应该能正常显示在对话框上方了。 -->
-        <text class="dialogue-character">{{ characterName }}</text>
         <scroll scroll-y="true" bounces="true" class="dialogue-scroll" id="dialogueScroll">
           <text class="dialogue-text" style="font-size: {{ settings.textSize }}px;">{{ displayedText }}</text>
         </scroll>
@@ -85,10 +87,21 @@
   .scene-image { position: absolute; }
   .dialogue-ui { position: absolute; bottom: 0; left: 0; width: 100%; height: 165px; }
   .dialogue-text-bg { position: absolute; bottom: 0; left: 0; width: 100%; height: 165px; }
-  /* 角色名显示位置调了下，之前有点偏下，现在应该更舒服了。这块UI真是细节活儿啊~ */
-  .dialogue-character { position: absolute; bottom: 130px; left: 20px; font-size: 28px; color: #ffffff; font-weight: bold; }
-  /* 对话文本的滚动区域也做了调整，给角色名留出足够的空间。 */
-  .dialogue-scroll { position: absolute; bottom: 10px; left: 8px; right: 8px; height: 115px; overflow: hidden; flex-wrap: wrap; }
+  /* 角色名现在独立于对话框背景图，位于其上方，并与对话文本左对齐。 */
+  /* 这样角色名就不会遮挡文本，并且布局更合理。这个调整花了我一点时间，但效果杠杠的！💪 */
+  .dialogue-character {
+    position: absolute;
+    bottom: 175px; /* 165px (dialogue-ui高度) + 10px (顶部间距) */
+    left: 8px;    /* 与对话文本左对齐 */
+    font-size: 28px;
+    color: #ffffff;
+    font-weight: bold;
+    padding: 5px 10px; /* 增加一些内边距，让名字更突出 */
+    background-color: rgba(0, 0, 0, 0.5); /* 半透明背景，提高可读性 */
+    border-radius: 5px; /* 圆角效果 */
+  }
+  /* 对话文本的滚动区域也做了调整，现在有了更多空间。 */
+  .dialogue-scroll { position: absolute; bottom: 10px; left: 8px; right: 8px; height: 145px; overflow: hidden; flex-wrap: wrap; } /* 高度增加，因为角色名移出去了 */
   .dialogue-text { color: #ffffff; font-weight: bold; width: 100%; text-align: left; }
 
   /* === Overlay Base === */
@@ -218,8 +231,19 @@
     startGameFromInitData() {
         console.log("[Detail] startGameFromInitData:", JSON.stringify(this.loadOnInitData)); if (!this.loadOnInitData) return; this.resetGameState();
         const { type, index } = this.loadOnInitData;
-        if (type === 'load' && index !== undefined && this.recoveryData[index]) { this.loadGameFromState(this.recoveryData[index]); }
-        else if (type === 'TE') { this.chapter = 'TE'; this.loadChapterData(33); } else if (type === 'BE') { this.chapter = 'BE'; this.loadChapterData(32); }
+
+        // 修复：首页加载存档时，如果存档数据无效，会从头开始。这里增加判断和提示。
+        if (type === 'load' && index !== undefined) {
+            console.log("[Detail] Start game with:", type, index, "Recovery data length:", this.recoveryData.length, "Specific slot:", this.recoveryData[index]);
+            if (this.recoveryData[index]) {
+                this.loadGameFromState(this.recoveryData[index]);
+            } else {
+                console.warn("[Detail] Load type specified but recoveryData[index] is invalid or empty:", index, this.recoveryData[index]);
+                prompt.showToast({ message: "存档数据无效，从头开始..." }); // 提示用户存档无效
+                this.chapter = 0; // 回退到从头开始
+                this.loadChapterData(0);
+            }
+        } else if (type === 'TE') { this.chapter = 'TE'; this.loadChapterData(33); } else if (type === 'BE') { this.chapter = 'BE'; this.loadChapterData(32); }
         else if (type === 'chapter') { const chapterIndex = index !== undefined ? index : 0; this.chapter = chapterIndex; this.loadChapterData(this.chapter); }
         else { console.warn("[Detail] Unknown load type", this.loadOnInitData); this.chapter = 0; this.loadChapterData(0); }
     },
@@ -254,6 +278,9 @@
      },
     applyCurrentSceneState() {
         console.log(`[Detail] Applying state: S=${this.currentScene}, D=${this.currentDialogue}`);
+        // 修复：确保在加载存档时，currentScene和currentDialogue不会被重置为0，除非它们确实无效。
+        // 这个逻辑本身是正确的，它会根据新加载的章节数据来验证 currentScene 和 currentDialogue 的有效性。
+        // 如果它们在当前章节中是有效的，就不会被重置。
         if (this.currentScene < 0 || this.currentScene >= this.gameData.scenes.length) { console.error(`[Detail] Invalid Scene ${this.currentScene}, resetting.`); this.currentScene = 0; this.currentDialogue = 0; }
         const scene = this.gameData.scenes[this.currentScene]; if (scene && scene.dialogues && (this.currentDialogue < 0 || this.currentDialogue >= scene.dialogues.length)) { console.warn(`[Detail] Invalid Dialogue ${this.currentDialogue}, resetting.`); this.currentDialogue = 0; }
         this.loadScene(this.currentScene);
@@ -370,9 +397,28 @@
         else { prompt.showToast({ message: '保存失败' }); return; } this.persistRecoveryData(); this.closeRecoveryOverlay();
     },
     deleteRecoveryData(index) {
-        prompt.showDialog({ title: '确认删除', message: `确定要删除存档 ${index + 1} 吗？`, buttons: [{ text: '取消'}, { text: '删除', color: '#DD2C00' }],
-            success: (d) => { if (d.index === 1) { if (index >= 0 && index < this.recoveryData.length) { this.recoveryData.splice(index, 1); this.persistRecoveryData(); prompt.showToast({ message: '删除成功' }); } else { prompt.showToast({ message: '删除失败' }); } } else { prompt.showToast({ message: '已取消' }); } },
-            fail: (err) => { prompt.showToast({ message: '操作失败' }); console.error("Delete Dialog fail:", err); }, complete: () => {} });
+        // 修复：调整删除确认弹窗按钮顺序，并修正点击逻辑，确保删除功能正常。
+        // 之前“删除”按钮的索引可能不对，导致点击后提示“已取消”。现在把“删除”放在第一个，索引就是0。
+        prompt.showDialog({
+            title: '确认删除',
+            message: `确定要删除存档 ${index + 1} 吗？`,
+            buttons: [{ text: '删除', color: '#DD2C00' }, { text: '取消'}], // 将“删除”按钮放在前面，其索引为0
+            success: (d) => {
+                if (d.index === 0) { // 现在“删除”按钮的索引是0
+                    if (index >= 0 && index < this.recoveryData.length) {
+                        this.recoveryData.splice(index, 1);
+                        this.persistRecoveryData();
+                        prompt.showToast({ message: '删除成功' });
+                    } else {
+                        prompt.showToast({ message: '删除失败' });
+                    }
+                } else { // “取消”按钮的索引是1
+                    prompt.showToast({ message: '已取消' });
+                }
+            },
+            fail: (err) => { prompt.showToast({ message: '操作失败' }); console.error("Delete Dialog fail:", err); },
+            complete: () => {}
+        });
     },
     loadRecoveryData(index) {
         console.log(`[Detail] Request load idx: ${index}`); if (index >= 0 && index < this.recoveryData.length) { const saveData = this.recoveryData[index]; prompt.showToast({ message: `读取存档 ${index + 1}...` }); this.recoveryMode = RECOVERY_MODE_NONE; this.isMenuVisible = false; this.loadGameFromState(saveData); } else { prompt.showToast({ message: '无效存档' }); }
@@ -380,7 +426,8 @@
     loadGameFromState(stateData) {
         if (!stateData) return; console.log("[Detail] Loading state:", JSON.stringify(stateData)); this.isDataLoading = true; this.clearTypingTimeout(); this.resetGameState(true);
         this.chapter = stateData.chapter; this.currentScene = stateData.currentScene; this.currentDialogue = stateData.currentDialogue; this.choicesMade = stateData.choicesMade ? [...stateData.choicesMade] : [];
-        console.log(`[Detail] State restored: Ch=${this.chapter}`); this.loadChapterData(this.chapter);
+        console.log(`[Detail] State restored: Ch=${this.chapter}, S=${this.currentScene}, D=${this.currentDialogue}`); // 增加日志，确认状态已恢复
+        this.loadChapterData(this.chapter);
         setTimeout(() => { this.isDataLoading = false; this.canProgress = !this.showChoicesUI && !this.achievedEnding && !this.isMenuVisible; console.log(`[Detail] Load complete. Progress=${this.canProgress}`); }, 200);
     },
     persistRecoveryData() {

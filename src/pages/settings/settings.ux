@@ -154,7 +154,7 @@
             });
         } catch (e) {
             prompt.showToast({ message: '设置数据异常' });
-            console.error("[Settings] Stringify settings fail:", e);
+            console.error("Stringify settings fail:", e);
         }
     },
 
