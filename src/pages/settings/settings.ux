@@ -12,11 +12,13 @@
             </div>
             <div class="setting-item">
                 <text class="setting-label">显示速度 ({{ tempSettings.textSpeed }})：</text>
-                <slider class="setting-slider" min="20" max="60" step="1" value="{{ tempSettings.textSpeed }}" @change="updateTempSetting('textSpeed', $event)"></slider>
+                <!-- 修复：直接将事件的第一个参数（期望是progress值）传递给 updateTempSetting -->
+                <slider class="setting-slider" min="20" max="60" step="1" value="{{ tempSettings.textSpeed }}" @change="updateTempSetting('textSpeed', $event.progress)"></slider>
             </div>
             <div class="setting-item">
                 <text class="setting-label">文字大小 ({{ tempSettings.textSize }})：</text>
-                 <slider class="setting-slider" min="20" max="32" step="1" value="{{ tempSettings.textSize }}" @change="updateTempSetting('textSize', $event)"></slider>
+                 <!-- 修复：直接将事件的第一个参数（期望是progress值）传递给 updateTempSetting -->
+                 <slider class="setting-slider" min="20" max="32" step="1" value="{{ tempSettings.textSize }}" @change="updateTempSetting('textSize', $event.progress)"></slider>
             </div>
         </div>
         <scroll scroll-y="true" bounces="true" class="settings-preview-scroll">
@@ -114,20 +116,30 @@
     // loadSettings() { ... }
 
     // --- 设置逻辑 ---
-    updateTempSetting(key, event) {
-      let newValue;
-      // 修复：在访问event属性前，先检查event对象本身是否有效。
-      if (event && typeof event.progress === 'number') {
-        newValue = event.progress;
-      } else if (event && typeof event.value === 'number') {
-        newValue = event.value;
-      } else {
-        // 如果event对象或其关键属性无效，打印警告并退出，避免TypeError。
-        console.warn(`[Settings] updateTempSetting: Event object or its value/progress property is invalid or undefined. Event:`, event);
-        return; // 无法获取有效值时直接返回
+    // 修复：修改函数签名，直接接收 newValue 作为参数。
+    updateTempSetting(key, newValue) {
+      // 在模板中我们已经尝试传递 $event.progress。
+      // 如果 Vela 运行时直接传递了 progress 值，那么 newValue 就是这个值。
+      // 如果 Vela 运行时传递的是一个包含 progress 的对象（如文档所述），那么模板中的 $event.progress 会生效。
+      // 如果 Vela 运行时什么都没传或者传了 undefined，那么下面的检查会处理。
+
+      console.log(`[Settings] updateTempSetting called with key: ${key}, received newValue:`, newValue);
+
+      // 再次确认newValue是否为数字，因为模板中传递的 $event.progress 可能在某些情况下仍为 undefined
+      if (typeof newValue !== 'number') {
+        console.warn(`[Settings] updateTempSetting: newValue is not a number or is undefined. Received:`, newValue);
+        // 尝试从 $event (如果它被错误地作为 newValue 传递) 中获取 progress
+        // 这一步是为了应对Vela可能存在的更深层次的事件参数传递不一致问题
+        if (newValue && typeof newValue.progress === 'number') {
+            console.log("[Settings] Fallback: trying to get progress from newValue object itself.");
+            newValue = newValue.progress;
+        } else {
+            console.error("[Settings] updateTempSetting: Cannot determine a valid numeric value for slider change.");
+            return; // 无法获取有效值时直接返回
+        }
       }
 
-      console.log(`[Settings] updateTempSetting: key=${key}, value=${newValue}`);
+      console.log(`[Settings] updateTempSetting: key=${key}, processed newValue=${newValue}`);
 
       if (typeof newValue === 'number' && (key === 'textSpeed' || key === 'textSize')) {
           // 确保数值在合理范围内，并取整
