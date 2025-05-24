@@ -1,9 +1,8 @@
 <template>
   <div class="settings-page-container"> <!-- 新的设置页面根容器 -->
-    <!-- 设置界面的背景图，路径也更新了。 -->
+    <!-- 设置界面的背景图 -->
     <image class="settings-bg-image" src="/common/images/ev000b.png"></image>
-    <!-- 设置界面的文本背景图，也更新了路径。 -->
-    <image class="settings-text-bg" src="/common/images/text_bg.png"></image>
+
     <div class="settings-controls-wrapper">
         <div class="settings-controls">
             <div class="settings-top-buttons">
@@ -12,49 +11,99 @@
             </div>
             <div class="setting-item">
                 <text class="setting-label">显示速度 ({{ tempSettings.textSpeed }})：</text>
-                <!-- 修复：恢复到旧版事件绑定方式，不直接传递参数 -->
                 <slider id="textSpeedSlider" class="setting-slider" min="20" max="60" step="1" value="{{ tempSettings.textSpeed }}" @change="handleTextSpeedChange"></slider>
             </div>
             <div class="setting-item">
                 <text class="setting-label">文字大小 ({{ tempSettings.textSize }})：</text>
-                 <!-- 修复：恢复到旧版事件绑定方式，不直接传递参数 -->
                  <slider id="textSizeSlider" class="setting-slider" min="20" max="32" step="1" value="{{ tempSettings.textSize }}" @change="handleTextSizeChange"></slider>
             </div>
         </div>
-        <scroll scroll-y="true" bounces="true" class="settings-preview-scroll">
-            <!-- 确保 textPreviewContent 能够正确显示 -->
-            <text class="settings-preview-text" style="font-size: {{ tempSettings.textSize }}px;">{{ textPreviewContent }}</text>
-        </scroll>
+
+        <!-- 预览文本区域 -->
+        <div class="settings-preview-area">
+            <!-- 将 text_bg.png 作为预览区域的背景 -->
+            <image class="preview-text-bg" src="/common/images/text_bg.png"></image>
+            <scroll scroll-y="true" bounces="true" class="settings-preview-scroll">
+                <text class="settings-preview-text" style="font-size: {{ tempSettings.textSize }}px;">{{ textPreviewContent }}</text>
+            </scroll>
+        </div>
     </div>
   </div>
 </template>
 
 <style>
-  /* 设置界面样式调整，之前它会跑到右边去，现在应该能正常全屏显示了。这个定位问题可把我折腾坏了，差点以为是Vela的bug呢。😂 */
   .settings-page-container {
     width: 336px;
     height: 480px;
     position: relative;
-    background-color: rgba(255, 255, 255, 0.95); /* 继承自原先的overlay样式 */
+    background-color: rgba(255, 255, 255, 0.95);
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: flex-start; /* 从顶部开始排列 */
     overflow: hidden;
   }
-  .settings-bg-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;}
-  .settings-text-bg { position: absolute; bottom: 0; left: 0; width: 100%; height: 165px; }
-  /* 修复：移除Vela不支持的box-sizing属性，避免控制台报错。 */
-  .settings-controls-wrapper { width: 100%; height: 100%; position: relative; display: flex; flex-direction: column; /* box-sizing: border-box; */ }
-  /* 修复：移除Vela不支持的box-sizing属性，避免控制台报错。 */
-  .settings-controls { width: 100%; padding: 20px; background-color: rgba(0, 0, 0, 0.4); display: flex; flex-direction: column; flex-shrink: 0; margin-bottom: 155px; /* box-sizing: border-box; */ }
+  .settings-bg-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; } /* 背景图置于最底层 */
+
+  .settings-controls-wrapper {
+    width: 100%;
+    height: 100%; /* 确保 wrapper 占满父容器 */
+    position: relative; /* 为内部绝对定位的元素提供上下文 */
+    display: flex;
+    flex-direction: column;
+    z-index: 1; /* 高于背景图 */
+  }
+
+  .settings-controls {
+    width: 100%;
+    padding: 20px;
+    background-color: rgba(0, 0, 0, 0.4); /* 半透明背景，让主背景图能透出来一点 */
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    /* margin-bottom: 155px; */ /* 移除这个，让预览区域决定其位置 */
+  }
   .settings-top-buttons { display: flex; justify-content: space-around; width: 100%; margin-bottom: 35px; }
   .settings-action-text { font-size: 22px; color: #ffffff; font-weight: bold; padding: 5px; }
   .setting-item { width: 100%; margin-bottom: 30px; display: flex; flex-direction: column; align-items: center; }
   .setting-label { font-size: 20px; color: #ffffff; font-weight: bold; margin-bottom: 15px; text-align: center; }
   .setting-slider { width: 90%; max-width: 250px; }
-  .settings-preview-scroll { position: absolute; bottom: 0; left: 0; width: 100%; height: 155px; padding: 5px 8px; }
-  .settings-preview-text { color: #ffffff; font-weight: bold; width: 100%; text-align: left; }
+
+  /* 新增：预览文本区域容器 */
+  .settings-preview-area {
+    position: absolute; /* 相对于 settings-controls-wrapper 定位 */
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 165px; /* 与 text_bg.png 的设计高度一致 */
+    /* background-color: #f00; */ /* 临时背景色，方便调试预览区域范围 */
+  }
+
+  /* 预览文本区域的背景图 */
+  .preview-text-bg {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 100%; /* 占满 settings-preview-area */
+    z-index: 1; /* 在滚动区域之下 */
+  }
+
+  .settings-preview-scroll {
+    position: absolute; /* 相对于 settings-preview-area 定位 */
+    bottom: 10px;      /* 根据 text_bg.png 的设计调整内边距 */
+    left: 8px;       /* 根据 text_bg.png 的设计调整内边距 */
+    right: 8px;      /* 根据 text_bg.png 的设计调整内边距 */
+    height: 145px;   /* 调整滚动区域高度以适应背景图 */
+    /* overflow: hidden; */ /* scroll 组件自带滚动，这里可以不用 */
+    z-index: 2; /* 在背景图之上 */
+  }
+  .settings-preview-text {
+    color: #ffffff;
+    font-weight: bold;
+    width: 100%;
+    text-align: left;
+  }
 </style>
 
 <script>
@@ -62,17 +111,16 @@
   import storage from '@system.storage';
   import prompt from '@system.prompt';
 
-  const STORAGE_KEYS = { SETTINGS: 'settings' }; // 这个页面只需要用到设置的存储键
+  const STORAGE_KEYS = { SETTINGS: 'settings' };
   const DEFAULT_SETTINGS = { textSpeed: 40, textSize: 22 };
 
   export default {
     private: {
-      settings: { ...DEFAULT_SETTINGS }, // 存储实际的设置值
-      tempSettings: { ...DEFAULT_SETTINGS }, // 用于临时调整的设置值
-      textPreviewContent: '', // 预览文本内容
-      textPreviewIndex: 0,    // 当前预览文本的索引
-      textPreviewTimerId: null, // 预览动画的定时器ID
-      // 确保 textPreviewText 有内容，这个是动画的源文本
+      settings: { ...DEFAULT_SETTINGS },
+      tempSettings: { ...DEFAULT_SETTINGS },
+      textPreviewContent: '',
+      textPreviewIndex: 0,
+      textPreviewTimerId: null,
       textPreviewText: `Atri -My Dear Moments-\n文字显示样本，用于预览文本速度和大小。\nSample text for previewing speed and size. (^_^)\n写完这段去喝咖啡☕️`,
     },
 
@@ -88,14 +136,12 @@
           this.settings = { ...DEFAULT_SETTINGS, ...s };
           console.log("[Settings] Settings loaded:", JSON.stringify(this.settings));
           this.tempSettings = { ...this.settings };
-          // 确保在获取到设置后启动动画
           this.startTextPreviewAnimation();
         },
         fail: (d, c) => {
           console.warn(`[Settings] Load settings fail: ${d}, ${c}`);
           this.settings = { ...DEFAULT_SETTINGS };
           this.tempSettings = { ...this.settings };
-          // 即使加载失败，也用默认设置启动动画
           this.startTextPreviewAnimation();
         },
         complete: () => {
@@ -146,12 +192,11 @@
           if (key === 'textSpeed') newValue = Math.max(20, Math.min(60, Math.round(newValue)));
           if (key === 'textSize') newValue = Math.max(20, Math.min(32, Math.round(newValue)));
           this.tempSettings[key] = newValue;
-          console.log(`[Settings] tempSettings.${key} updated to: ${this.tempSettings[key]}`); // 确认 tempSettings 更新
+          console.log(`[Settings] tempSettings.${key} updated to: ${this.tempSettings[key]}`);
           if (key === 'textSpeed') {
             console.log("[Settings] Text speed changed, restarting preview animation.");
             this.startTextPreviewAnimation();
           }
-          // 文字大小的改变会直接通过 style="{{...}}" 反映，不需要特别处理动画重启，除非动画逻辑依赖它
       } else {
           console.warn(`[Settings] Invalid slider value/key in updateTempSetting. value type: ${typeof newValue}, key: ${key}`);
       }
@@ -183,14 +228,13 @@
       router.back();
     },
 
-    // --- 文本预览动画 ---
     startTextPreviewAnimation() {
       console.log("[Settings] startTextPreviewAnimation called.");
-      this.stopTextPreviewAnimation(); // 确保之前的动画已停止
-      this.textPreviewContent = '';    // 重置显示的文本
-      this.textPreviewIndex = 0;       // 重置索引
+      this.stopTextPreviewAnimation();
+      this.textPreviewContent = '';
+      this.textPreviewIndex = 0;
       console.log(`[Settings] Preview text reset. Starting animation with speed: ${this.tempSettings.textSpeed}`);
-      this.animateTextPreview();       // 开始新的动画
+      this.animateTextPreview();
     },
     stopTextPreviewAnimation() {
       if (this.textPreviewTimerId) {
@@ -200,32 +244,18 @@
       }
     },
     animateTextPreview() {
-      // 确保 textPreviewTimerId 在 stopTextPreviewAnimation 后仍然为 null，避免意外启动
-      // 但这里我们是在 startTextPreviewAnimation 内部调用的，所以 textPreviewTimerId 此时应该为 null
-      // 如果是从 setTimeout 回调中再次调用，则 textPreviewTimerId 应该已经被设置
-
-      // 增加日志，看动画是否在执行
       console.log(`[Settings] animateTextPreview: index=${this.textPreviewIndex}, speed=${this.tempSettings.textSpeed}, textLength=${this.textPreviewText.length}`);
-
       if (this.textPreviewIndex < this.textPreviewText.length) {
         this.textPreviewContent += this.textPreviewText.charAt(this.textPreviewIndex);
-        // 增加日志，看 textPreviewContent 是否在更新
-        // console.log(`[Settings] textPreviewContent updated: "${this.textPreviewContent}"`);
         this.textPreviewIndex++;
         this.textPreviewTimerId = setTimeout(() => {
-            // 确保在 setTimeout 回调中 this 指向正确
-            // console.log("[Settings] setTimeout callback for animateTextPreview triggered.");
             this.animateTextPreview();
         }, this.tempSettings.textSpeed);
-        // console.log(`[Settings] animateTextPreview: Scheduled next char. Timeout ID: ${this.textPreviewTimerId}`);
       } else {
         console.log("[Settings] animateTextPreview: All text displayed. Scheduling restart.");
-        // 所有文本显示完毕后，等待一段时间，然后重新开始动画。
         this.textPreviewTimerId = setTimeout(() => {
-            // console.log("[Settings] setTimeout callback for restarting animation triggered.");
             this.startTextPreviewAnimation();
-        }, 2000); // 2秒后重启
-        // console.log(`[Settings] animateTextPreview: Scheduled restart. Timeout ID: ${this.textPreviewTimerId}`);
+        }, 2000);
       }
     },
   }
