@@ -12,13 +12,13 @@
             </div>
             <div class="setting-item">
                 <text class="setting-label">显示速度 ({{ tempSettings.textSpeed }})：</text>
-                <!-- 修复：只传递 $event，在方法内部解析 -->
-                <slider class="setting-slider" min="20" max="60" step="1" value="{{ tempSettings.textSpeed }}" @change="updateTempSetting('textSpeed', $event)"></slider>
+                <!-- 修复：恢复到旧版事件绑定方式，不直接传递参数 -->
+                <slider id="textSpeedSlider" class="setting-slider" min="20" max="60" step="1" value="{{ tempSettings.textSpeed }}" @change="handleTextSpeedChange"></slider>
             </div>
             <div class="setting-item">
                 <text class="setting-label">文字大小 ({{ tempSettings.textSize }})：</text>
-                 <!-- 修复：只传递 $event，在方法内部解析 -->
-                 <slider class="setting-slider" min="20" max="32" step="1" value="{{ tempSettings.textSize }}" @change="updateTempSetting('textSize', $event)"></slider>
+                 <!-- 修复：恢复到旧版事件绑定方式，不直接传递参数 -->
+                 <slider id="textSizeSlider" class="setting-slider" min="20" max="32" step="1" value="{{ tempSettings.textSize }}" @change="handleTextSizeChange"></slider>
             </div>
         </div>
         <scroll scroll-y="true" bounces="true" class="settings-preview-scroll">
@@ -78,7 +78,6 @@
       // 页面初始化时，先加载用户之前的设置，然后把临时设置也同步过来。
       // 这样用户进来就能看到自己上次调整过的参数，体验会好很多~ 😋
       console.log("[Settings] onInit: Loading settings.");
-      // 修复：直接使用回调函数，避免Promise包装可能带来的兼容性问题。
       storage.get({
         key: STORAGE_KEYS.SETTINGS,
         success: (d) => {
@@ -98,73 +97,75 @@
           this.startTextPreviewAnimation(); // 启动文本预览动画
         },
         complete: () => {
-          // complete 回调通常用于清理或最终状态更新，这里可以留空或添加日志
           console.log("[Settings] storage.get complete.");
         }
       });
     },
     onHide() {
-      // 页面隐藏时，停止文本预览动画，节省资源。
       this.stopTextPreviewAnimation();
     },
     onDestroy() {
-      // 页面销毁时，确保定时器彻底清除，避免内存泄漏。
       this.stopTextPreviewAnimation();
     },
 
-    // --- 数据加载器 (已整合到onInit中，此函数不再需要) ---
-    // loadSettings() { ... }
+    // --- 新增的事件处理函数，用于接收 slider 的 change 事件 ---
+    handleTextSpeedChange(event) {
+      // 在这种绑定方式下，event 对象应该会被隐式传递过来
+      console.log("[Settings] handleTextSpeedChange triggered, event:", JSON.stringify(event));
+      if (event && typeof event.progress === 'number') {
+        this.updateTempSetting('textSpeed', event.progress);
+      } else {
+        console.error("[Settings] handleTextSpeedChange: event or event.progress is invalid.", JSON.stringify(event));
+        // 作为备用，如果事件传递仍然有问题，尝试从元素获取值
+        // 这段代码是为了以防万一，但理想情况下上面 if 分支应该能工作
+        const sliderElement = this.$element('textSpeedSlider');
+        if (sliderElement && typeof sliderElement.attr.value === 'number') {
+            console.warn("[Settings] handleTextSpeedChange: Fallback to getting value from element.");
+            this.updateTempSetting('textSpeed', sliderElement.attr.value);
+        }
+      }
+    },
 
-    // --- 设置逻辑 ---
-    // 修复：修改函数签名，接收 event 对象，并尝试从 event.detail.progress 获取值。
-    updateTempSetting(key, event) {
-      let newValue;
-      console.log(`[Settings] updateTempSetting called with key: ${key}, received event:`, JSON.stringify(event)); // 打印完整的event对象，看看里面到底有什么
+    handleTextSizeChange(event) {
+      // 在这种绑定方式下，event 对象应该会被隐式传递过来
+      console.log("[Settings] handleTextSizeChange triggered, event:", JSON.stringify(event));
+      if (event && typeof event.progress === 'number') {
+        this.updateTempSetting('textSize', event.progress);
+      } else {
+        console.error("[Settings] handleTextSizeChange: event or event.progress is invalid.", JSON.stringify(event));
+        // 作为备用
+        const sliderElement = this.$element('textSizeSlider');
+        if (sliderElement && typeof sliderElement.attr.value === 'number') {
+            console.warn("[Settings] handleTextSizeChange: Fallback to getting value from element.");
+            this.updateTempSetting('textSize', sliderElement.attr.value);
+        }
+      }
+    },
+    // --- 设置逻辑的核心处理函数 ---
+    updateTempSetting(key, value) {
+      // 这个函数现在只负责接收 key 和已经解析好的 value
+      console.log(`[Settings] updateTempSetting: key=${key}, value=${value}`);
 
-      // 尝试从 event.detail.progress 获取值
-      if (event && event.detail && typeof event.detail.progress === 'number') {
-        newValue = event.detail.progress;
-        console.log(`[Settings] Value from event.detail.progress: ${newValue}`);
-      }
-      // 如果 event.detail.progress 不存在，再尝试直接使用 event.progress (根据官方文档)
-      else if (event && typeof event.progress === 'number') {
-        newValue = event.progress;
-        console.log(`[Settings] Value from event.progress: ${newValue}`);
-      }
-      // 如果以上都不行，并且 event 本身就是数字 (Vela的某种特殊传递方式)
-      else if (typeof event === 'number') {
-        newValue = event;
-        console.log(`[Settings] Value directly from event (as number): ${newValue}`);
-      }
-      else {
-        console.error("[Settings] updateTempSetting: Cannot determine a valid numeric value from slider change event. Event received:", JSON.stringify(event));
-        return; // 无法获取有效值时直接返回
-      }
-
-      console.log(`[Settings] updateTempSetting: key=${key}, processed newValue=${newValue}`);
+      let newValue = value; // 直接使用传入的 value
 
       if (typeof newValue === 'number' && (key === 'textSpeed' || key === 'textSize')) {
-          // 确保数值在合理范围内，并取整
           if (key === 'textSpeed') newValue = Math.max(20, Math.min(60, Math.round(newValue)));
           if (key === 'textSize') newValue = Math.max(20, Math.min(32, Math.round(newValue)));
           this.tempSettings[key] = newValue;
-          // 速度改变时，重新启动动画，让用户立即看到效果。文字大小改变则直接反映在样式上。
           if (key === 'textSpeed') { this.startTextPreviewAnimation(); }
       } else {
-          console.warn(`[Settings] Invalid slider value/key after processing. newValue type: ${typeof newValue}, key: ${key}`);
+          console.warn(`[Settings] Invalid slider value/key in updateTempSetting. value type: ${typeof newValue}, key: ${key}`);
       }
     },
 
     saveSettingsAndClose() {
-        // 用户点击保存并退出，把临时设置持久化到存储里。
-        // 这次我检查了三遍，应该不会再有保存失败的问题了... 🤞
-        this.settings = { ...this.tempSettings }; // 将临时设置应用到实际设置
+        this.settings = { ...this.tempSettings };
         try {
             const s = JSON.stringify(this.settings);
             storage.set({ key: STORAGE_KEYS.SETTINGS, value: s,
                 success: () => {
                     prompt.showToast({ message: '设置已保存' });
-                    router.back(); // 返回上一个页面
+                    router.back();
                 },
                 fail: (d, c) => {
                     prompt.showToast({ message: `保存失败` });
@@ -179,41 +180,30 @@
     },
 
     closeSettingsPage() {
-      // 用户选择直接退出，不保存任何修改。直接返回上一个页面。
       console.log("[Settings] Closing settings page without saving.");
       router.back();
     },
 
     // --- 文本预览动画 ---
     startTextPreviewAnimation() {
-      // 启动文本预览动画，清空现有内容，从头开始打字效果。
-      // 之前这里有点小bug，导致动画不流畅，现在应该丝滑了~ ✨
-      this.stopTextPreviewAnimation(); // 停止任何现有动画
+      this.stopTextPreviewAnimation();
       this.textPreviewContent = '';
       this.textPreviewIndex = 0;
       this.animateTextPreview();
     },
     stopTextPreviewAnimation() {
-      // 停止文本预览动画的定时器。
       if (this.textPreviewTimerId) {
         clearTimeout(this.textPreviewTimerId);
         this.textPreviewTimerId = null;
       }
     },
     animateTextPreview() {
-      // 逐字显示文本的动画逻辑。
-      // 修复：使用箭头函数确保 `this` 上下文正确。
-      if (this.textPreviewTimerId === null) { return; } // 动画已从外部停止
-
+      if (this.textPreviewTimerId === null) { return; }
       if (this.textPreviewIndex < this.textPreviewText.length) {
         this.textPreviewContent += this.textPreviewText.charAt(this.textPreviewIndex);
         this.textPreviewIndex++;
-        // 使用箭头函数，更符合现代JS写法，且在某些环境下对this的绑定更稳定
         this.textPreviewTimerId = setTimeout(() => this.animateTextPreview(), this.tempSettings.textSpeed);
       } else {
-        // 所有文本显示完毕后，等待一段时间，然后重新开始动画。
-        // 等待时间设为2秒，给用户足够时间阅读。
-        // 使用箭头函数，更符合现代JS写法，且在某些环境下对this的绑定更稳定
         this.textPreviewTimerId = setTimeout(() => this.startTextPreviewAnimation(), 2000);
       }
     },
