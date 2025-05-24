@@ -26,6 +26,9 @@
       },
       "pages/detail": {
         "component": "detail"
+      },
+      "pages/settings": {
+        "component": "settings"
       }
     }
   }
