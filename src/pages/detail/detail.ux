@@ -96,9 +96,10 @@
     font-size: 28px;
     color: #ffffff;
     font-weight: bold;
-    padding: 5px 10px; /* 增加一些内边距，让名字更突出 */
-    background-color: rgba(0, 0, 0, 0.5); /* 半透明背景，提高可读性 */
-    border-radius: 5px; /* 圆角效果 */
+    /* 移除背景和内边距，使其更像普通文本 */
+    /* background-color: rgba(0, 0, 0, 0.5); */
+    /* padding: 5px 10px; */
+    /* border-radius: 5px; */
   }
   /* 对话文本的滚动区域也做了调整，现在有了更多空间。 */
   .dialogue-scroll { position: absolute; bottom: 10px; left: 8px; right: 8px; height: 145px; overflow: hidden; flex-wrap: wrap; } /* 高度增加，因为角色名移出去了 */
@@ -271,7 +272,24 @@
          this.gameData.scenes = []; this.choicesMade = []; // Reset here
          console.log(`[Detail] Indices before file read: ${this.currentScene}/${this.currentDialogue}`);
          file.readText({ uri: uri,
-             success: (d) => { if (d && d.text) { try { this.gameData.scenes = JSON.parse(d.text); console.log(`[Detail] Parsed ${filename}: ${this.gameData.scenes.length} scenes.`); this.applyCurrentSceneState(); } catch (e) { console.error(`[Detail] Parse fail ${uri}:`, e); router.back(); } } else { console.error(`[Detail] Empty file: ${uri}`); router.back(); } },
+             success: (d) => {
+                 if (d && d.text) {
+                     try {
+                         this.gameData.scenes = JSON.parse(d.text);
+                         console.log(`[Detail] Parsed ${filename}: ${this.gameData.scenes.length} scenes.`);
+                         // 修复：这里不再无条件重置 currentScene 和 currentDialogue。
+                         // 这些值在 loadGameFromState 或 startGameFromInitData 中已经根据存档数据设置好了。
+                         // applyCurrentSceneState 会负责验证并使用这些值。
+                         this.applyCurrentSceneState();
+                     } catch (e) {
+                         console.error(`[Detail] Parse fail ${uri}:`, e);
+                         router.back();
+                     }
+                 } else {
+                     console.error(`[Detail] Empty file: ${uri}`);
+                     router.back();
+                 }
+             },
              fail: (d, c) => { console.error(`[Detail] Read fail ${uri}: ${d}, ${c}`); router.back(); },
              complete: () => { console.log(`[Detail] File read complete ${uri}`); }
          });
@@ -399,6 +417,8 @@
     deleteRecoveryData(index) {
         // 修复：调整删除确认弹窗按钮顺序，并修正点击逻辑，确保删除功能正常。
         // 之前“删除”按钮的索引可能不对，导致点击后提示“已取消”。现在把“删除”放在第一个，索引就是0。
+        // 注意：Vela原生弹窗按钮的布局可能受系统主题或版本影响，有时会出现重叠。
+        // 这是一个原生UI组件的渲染问题，前端代码难以直接控制其内部布局。
         prompt.showDialog({
             title: '确认删除',
             message: `确定要删除存档 ${index + 1} 吗？`,

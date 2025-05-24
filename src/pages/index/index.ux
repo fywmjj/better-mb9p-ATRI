@@ -7,10 +7,12 @@
     <!-- True Ending Overlay Image -->
     <!-- 真结局的图片路径也挪到images目录了。 -->
     <!-- 修复：现在只要达成Happy Ending，就会显示真结局视觉效果。 -->
+    <!-- 修复：移除图片透明度，使其完全不透明。 -->
     <image class="true-end-visual" src="/common/images/ATRI_TrueEnding.png" if="{{ showTrueEndVisuals }}"></image>
 
     <!-- Main Menu Buttons Container -->
-    <div class="main-menu-button-container"> <!-- Changed class name -->
+    <!-- 修复：将主菜单按钮容器整体上移，避免TRUE END按钮与EXIT按钮挤压。 -->
+    <div class="main-menu-button-container">
       <text class="main-menu-button true-end-button" if="{{ showTrueEndVisuals }}" @click="loadGame('TE')">TRUE END</text>
       <text class="main-menu-button" @click="startGame()">START</text>
       <text class="main-menu-button {{ hasSaveData ? '' : 'disabled' }}" @click="showLoadOverlay()">LOAD</text>
@@ -49,10 +51,19 @@
   /* Base Styles */
   .page-container { width: 336px; height: 480px; position: relative; background-color: #000000; overflow: hidden; }
   .bg-image { width: 100%; height: 100%; object-fit: cover; }
-  .true-end-visual { position: absolute; top: 0; left: 0; width: 100%; height: auto; opacity: 0.8; }
+  .true-end-visual {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    /* 修复：移除透明度 */
+    /* opacity: 0.8; */
+  }
 
   /* === Main Menu Button Styles === */
-  .main-menu-button-container { position: absolute; top: 215px; /* Slightly adjusted */ left: 35px; /* Slightly adjusted */ display: flex; flex-direction: column; align-items: flex-start; }
+  /* 修复：将主菜单按钮容器整体上移，避免TRUE END按钮与EXIT按钮挤压。 */
+  .main-menu-button-container { position: absolute; top: 180px; /* 从215px调整到180px，向上移动 */ left: 35px; /* Slightly adjusted */ display: flex; flex-direction: column; align-items: flex-start; }
   .main-menu-button {
     font-size: 30px; /* Reduced size */
     font-weight: bold;
