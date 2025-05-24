@@ -115,8 +115,18 @@
 
     // --- 设置逻辑 ---
     updateTempSetting(key, event) {
-      let newValue = event.progress; // 假设是progress属性
-      if (typeof newValue !== 'number' && typeof event.value === 'number') { newValue = event.value; } // 兼容value属性
+      let newValue;
+      // 修复：在访问event属性前，先检查event对象本身是否有效。
+      if (event && typeof event.progress === 'number') {
+        newValue = event.progress;
+      } else if (event && typeof event.value === 'number') {
+        newValue = event.value;
+      } else {
+        // 如果event对象或其关键属性无效，打印警告并退出，避免TypeError。
+        console.warn(`[Settings] updateTempSetting: Event object or its value/progress property is invalid or undefined. Event:`, event);
+        return; // 无法获取有效值时直接返回
+      }
+
       console.log(`[Settings] updateTempSetting: key=${key}, value=${newValue}`);
 
       if (typeof newValue === 'number' && (key === 'textSpeed' || key === 'textSize')) {
@@ -127,7 +137,7 @@
           // 速度改变时，重新启动动画，让用户立即看到效果。文字大小改变则直接反映在样式上。
           if (key === 'textSpeed') { this.startTextPreviewAnimation(); }
       } else {
-          console.warn(`[Settings] Invalid slider value/key.`);
+          console.warn(`[Settings] Invalid slider value/key after processing.`);
       }
     },
 
