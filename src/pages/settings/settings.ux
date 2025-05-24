@@ -12,13 +12,13 @@
             </div>
             <div class="setting-item">
                 <text class="setting-label">显示速度 ({{ tempSettings.textSpeed }})：</text>
-                <!-- 修复：直接将事件的第一个参数（期望是progress值）传递给 updateTempSetting -->
-                <slider class="setting-slider" min="20" max="60" step="1" value="{{ tempSettings.textSpeed }}" @change="updateTempSetting('textSpeed', $event.progress)"></slider>
+                <!-- 修复：只传递 $event，在方法内部解析 -->
+                <slider class="setting-slider" min="20" max="60" step="1" value="{{ tempSettings.textSpeed }}" @change="updateTempSetting('textSpeed', $event)"></slider>
             </div>
             <div class="setting-item">
                 <text class="setting-label">文字大小 ({{ tempSettings.textSize }})：</text>
-                 <!-- 修复：直接将事件的第一个参数（期望是progress值）传递给 updateTempSetting -->
-                 <slider class="setting-slider" min="20" max="32" step="1" value="{{ tempSettings.textSize }}" @change="updateTempSetting('textSize', $event.progress)"></slider>
+                 <!-- 修复：只传递 $event，在方法内部解析 -->
+                 <slider class="setting-slider" min="20" max="32" step="1" value="{{ tempSettings.textSize }}" @change="updateTempSetting('textSize', $event)"></slider>
             </div>
         </div>
         <scroll scroll-y="true" bounces="true" class="settings-preview-scroll">
@@ -116,27 +116,29 @@
     // loadSettings() { ... }
 
     // --- 设置逻辑 ---
-    // 修复：修改函数签名，直接接收 newValue 作为参数。
-    updateTempSetting(key, newValue) {
-      // 在模板中我们已经尝试传递 $event.progress。
-      // 如果 Vela 运行时直接传递了 progress 值，那么 newValue 就是这个值。
-      // 如果 Vela 运行时传递的是一个包含 progress 的对象（如文档所述），那么模板中的 $event.progress 会生效。
-      // 如果 Vela 运行时什么都没传或者传了 undefined，那么下面的检查会处理。
+    // 修复：修改函数签名，接收 event 对象，并尝试从 event.detail.progress 获取值。
+    updateTempSetting(key, event) {
+      let newValue;
+      console.log(`[Settings] updateTempSetting called with key: ${key}, received event:`, JSON.stringify(event)); // 打印完整的event对象，看看里面到底有什么
 
-      console.log(`[Settings] updateTempSetting called with key: ${key}, received newValue:`, newValue);
-
-      // 再次确认newValue是否为数字，因为模板中传递的 $event.progress 可能在某些情况下仍为 undefined
-      if (typeof newValue !== 'number') {
-        console.warn(`[Settings] updateTempSetting: newValue is not a number or is undefined. Received:`, newValue);
-        // 尝试从 $event (如果它被错误地作为 newValue 传递) 中获取 progress
-        // 这一步是为了应对Vela可能存在的更深层次的事件参数传递不一致问题
-        if (newValue && typeof newValue.progress === 'number') {
-            console.log("[Settings] Fallback: trying to get progress from newValue object itself.");
-            newValue = newValue.progress;
-        } else {
-            console.error("[Settings] updateTempSetting: Cannot determine a valid numeric value for slider change.");
-            return; // 无法获取有效值时直接返回
-        }
+      // 尝试从 event.detail.progress 获取值
+      if (event && event.detail && typeof event.detail.progress === 'number') {
+        newValue = event.detail.progress;
+        console.log(`[Settings] Value from event.detail.progress: ${newValue}`);
+      }
+      // 如果 event.detail.progress 不存在，再尝试直接使用 event.progress (根据官方文档)
+      else if (event && typeof event.progress === 'number') {
+        newValue = event.progress;
+        console.log(`[Settings] Value from event.progress: ${newValue}`);
+      }
+      // 如果以上都不行，并且 event 本身就是数字 (Vela的某种特殊传递方式)
+      else if (typeof event === 'number') {
+        newValue = event;
+        console.log(`[Settings] Value directly from event (as number): ${newValue}`);
+      }
+      else {
+        console.error("[Settings] updateTempSetting: Cannot determine a valid numeric value from slider change event. Event received:", JSON.stringify(event));
+        return; // 无法获取有效值时直接返回
       }
 
       console.log(`[Settings] updateTempSetting: key=${key}, processed newValue=${newValue}`);
@@ -149,7 +151,7 @@
           // 速度改变时，重新启动动画，让用户立即看到效果。文字大小改变则直接反映在样式上。
           if (key === 'textSpeed') { this.startTextPreviewAnimation(); }
       } else {
-          console.warn(`[Settings] Invalid slider value/key after processing.`);
+          console.warn(`[Settings] Invalid slider value/key after processing. newValue type: ${typeof newValue}, key: ${key}`);
       }
     },
 
