@@ -22,6 +22,7 @@
             </div>
         </div>
         <scroll scroll-y="true" bounces="true" class="settings-preview-scroll">
+            <!-- 确保 textPreviewContent 能够正确显示 -->
             <text class="settings-preview-text" style="font-size: {{ tempSettings.textSize }}px;">{{ textPreviewContent }}</text>
         </scroll>
     </div>
@@ -68,15 +69,14 @@
     private: {
       settings: { ...DEFAULT_SETTINGS }, // 存储实际的设置值
       tempSettings: { ...DEFAULT_SETTINGS }, // 用于临时调整的设置值
-      textPreviewContent: '',
-      textPreviewIndex: 0,
-      textPreviewTimerId: null,
-      textPreviewText: `Atri -My Dear Moments-\n文字显示样本，用于预览文本速度和大小。\nSample text for previewing speed and size.`,
+      textPreviewContent: '', // 预览文本内容
+      textPreviewIndex: 0,    // 当前预览文本的索引
+      textPreviewTimerId: null, // 预览动画的定时器ID
+      // 确保 textPreviewText 有内容，这个是动画的源文本
+      textPreviewText: `Atri -My Dear Moments-\n文字显示样本，用于预览文本速度和大小。\nSample text for previewing speed and size. (^_^)\n写完这段去喝咖啡☕️`,
     },
 
     onInit() {
-      // 页面初始化时，先加载用户之前的设置，然后把临时设置也同步过来。
-      // 这样用户进来就能看到自己上次调整过的参数，体验会好很多~ 😋
       console.log("[Settings] onInit: Loading settings.");
       storage.get({
         key: STORAGE_KEYS.SETTINGS,
@@ -85,16 +85,18 @@
           if (d) {
             try { s = JSON.parse(d); } catch (e) { console.error("[Settings] Parse settings error:", e); }
           }
-          this.settings = { ...DEFAULT_SETTINGS, ...s }; // 与默认设置合并
+          this.settings = { ...DEFAULT_SETTINGS, ...s };
           console.log("[Settings] Settings loaded:", JSON.stringify(this.settings));
-          this.tempSettings = { ...this.settings }; // 应用加载到的设置到临时设置
-          this.startTextPreviewAnimation(); // 启动文本预览动画
+          this.tempSettings = { ...this.settings };
+          // 确保在获取到设置后启动动画
+          this.startTextPreviewAnimation();
         },
         fail: (d, c) => {
           console.warn(`[Settings] Load settings fail: ${d}, ${c}`);
-          this.settings = { ...DEFAULT_SETTINGS }; // 回退到默认设置
-          this.tempSettings = { ...this.settings }; // 应用默认设置到临时设置
-          this.startTextPreviewAnimation(); // 启动文本预览动画
+          this.settings = { ...DEFAULT_SETTINGS };
+          this.tempSettings = { ...this.settings };
+          // 即使加载失败，也用默认设置启动动画
+          this.startTextPreviewAnimation();
         },
         complete: () => {
           console.log("[Settings] storage.get complete.");
@@ -102,22 +104,20 @@
       });
     },
     onHide() {
+      console.log("[Settings] onHide called. Stopping text preview animation.");
       this.stopTextPreviewAnimation();
     },
     onDestroy() {
+      console.log("[Settings] onDestroy called. Stopping text preview animation.");
       this.stopTextPreviewAnimation();
     },
 
-    // --- 新增的事件处理函数，用于接收 slider 的 change 事件 ---
     handleTextSpeedChange(event) {
-      // 在这种绑定方式下，event 对象应该会被隐式传递过来
       console.log("[Settings] handleTextSpeedChange triggered, event:", JSON.stringify(event));
       if (event && typeof event.progress === 'number') {
         this.updateTempSetting('textSpeed', event.progress);
       } else {
         console.error("[Settings] handleTextSpeedChange: event or event.progress is invalid.", JSON.stringify(event));
-        // 作为备用，如果事件传递仍然有问题，尝试从元素获取值
-        // 这段代码是为了以防万一，但理想情况下上面 if 分支应该能工作
         const sliderElement = this.$element('textSpeedSlider');
         if (sliderElement && typeof sliderElement.attr.value === 'number') {
             console.warn("[Settings] handleTextSpeedChange: Fallback to getting value from element.");
@@ -127,13 +127,11 @@
     },
 
     handleTextSizeChange(event) {
-      // 在这种绑定方式下，event 对象应该会被隐式传递过来
       console.log("[Settings] handleTextSizeChange triggered, event:", JSON.stringify(event));
       if (event && typeof event.progress === 'number') {
         this.updateTempSetting('textSize', event.progress);
       } else {
         console.error("[Settings] handleTextSizeChange: event or event.progress is invalid.", JSON.stringify(event));
-        // 作为备用
         const sliderElement = this.$element('textSizeSlider');
         if (sliderElement && typeof sliderElement.attr.value === 'number') {
             console.warn("[Settings] handleTextSizeChange: Fallback to getting value from element.");
@@ -141,18 +139,19 @@
         }
       }
     },
-    // --- 设置逻辑的核心处理函数 ---
     updateTempSetting(key, value) {
-      // 这个函数现在只负责接收 key 和已经解析好的 value
       console.log(`[Settings] updateTempSetting: key=${key}, value=${value}`);
-
-      let newValue = value; // 直接使用传入的 value
-
+      let newValue = value;
       if (typeof newValue === 'number' && (key === 'textSpeed' || key === 'textSize')) {
           if (key === 'textSpeed') newValue = Math.max(20, Math.min(60, Math.round(newValue)));
           if (key === 'textSize') newValue = Math.max(20, Math.min(32, Math.round(newValue)));
           this.tempSettings[key] = newValue;
-          if (key === 'textSpeed') { this.startTextPreviewAnimation(); }
+          console.log(`[Settings] tempSettings.${key} updated to: ${this.tempSettings[key]}`); // 确认 tempSettings 更新
+          if (key === 'textSpeed') {
+            console.log("[Settings] Text speed changed, restarting preview animation.");
+            this.startTextPreviewAnimation();
+          }
+          // 文字大小的改变会直接通过 style="{{...}}" 反映，不需要特别处理动画重启，除非动画逻辑依赖它
       } else {
           console.warn(`[Settings] Invalid slider value/key in updateTempSetting. value type: ${typeof newValue}, key: ${key}`);
       }
@@ -186,25 +185,47 @@
 
     // --- 文本预览动画 ---
     startTextPreviewAnimation() {
-      this.stopTextPreviewAnimation();
-      this.textPreviewContent = '';
-      this.textPreviewIndex = 0;
-      this.animateTextPreview();
+      console.log("[Settings] startTextPreviewAnimation called.");
+      this.stopTextPreviewAnimation(); // 确保之前的动画已停止
+      this.textPreviewContent = '';    // 重置显示的文本
+      this.textPreviewIndex = 0;       // 重置索引
+      console.log(`[Settings] Preview text reset. Starting animation with speed: ${this.tempSettings.textSpeed}`);
+      this.animateTextPreview();       // 开始新的动画
     },
     stopTextPreviewAnimation() {
       if (this.textPreviewTimerId) {
+        console.log(`[Settings] stopTextPreviewAnimation: Clearing timeout ID ${this.textPreviewTimerId}`);
         clearTimeout(this.textPreviewTimerId);
         this.textPreviewTimerId = null;
       }
     },
     animateTextPreview() {
-      if (this.textPreviewTimerId === null) { return; }
+      // 确保 textPreviewTimerId 在 stopTextPreviewAnimation 后仍然为 null，避免意外启动
+      // 但这里我们是在 startTextPreviewAnimation 内部调用的，所以 textPreviewTimerId 此时应该为 null
+      // 如果是从 setTimeout 回调中再次调用，则 textPreviewTimerId 应该已经被设置
+
+      // 增加日志，看动画是否在执行
+      console.log(`[Settings] animateTextPreview: index=${this.textPreviewIndex}, speed=${this.tempSettings.textSpeed}, textLength=${this.textPreviewText.length}`);
+
       if (this.textPreviewIndex < this.textPreviewText.length) {
         this.textPreviewContent += this.textPreviewText.charAt(this.textPreviewIndex);
+        // 增加日志，看 textPreviewContent 是否在更新
+        // console.log(`[Settings] textPreviewContent updated: "${this.textPreviewContent}"`);
         this.textPreviewIndex++;
-        this.textPreviewTimerId = setTimeout(() => this.animateTextPreview(), this.tempSettings.textSpeed);
+        this.textPreviewTimerId = setTimeout(() => {
+            // 确保在 setTimeout 回调中 this 指向正确
+            // console.log("[Settings] setTimeout callback for animateTextPreview triggered.");
+            this.animateTextPreview();
+        }, this.tempSettings.textSpeed);
+        // console.log(`[Settings] animateTextPreview: Scheduled next char. Timeout ID: ${this.textPreviewTimerId}`);
       } else {
-        this.textPreviewTimerId = setTimeout(() => this.startTextPreviewAnimation(), 2000);
+        console.log("[Settings] animateTextPreview: All text displayed. Scheduling restart.");
+        // 所有文本显示完毕后，等待一段时间，然后重新开始动画。
+        this.textPreviewTimerId = setTimeout(() => {
+            // console.log("[Settings] setTimeout callback for restarting animation triggered.");
+            this.startTextPreviewAnimation();
+        }, 2000); // 2秒后重启
+        // console.log(`[Settings] animateTextPreview: Scheduled restart. Timeout ID: ${this.textPreviewTimerId}`);
       }
     },
   }
