@@ -11,18 +11,15 @@
     <!-- 对话列表 -->
     <scroll class="history-list-scroll" scroll-y="true" bounces="true">
       <div class="history-list-item" for="{{ (index, item) in dialogueHistory }}" @click="jumpToDialogue(item)" @longpress="saveDialogueAsRecovery(item)">
-        <!-- 角色图片区域 -->
         <div class="character-image-container">
           <image class="character-image" src="{{ getCharacterImage(item.character) }}" if="{{ getCharacterImage(item.character) }}"></image>
         </div>
-        <!-- 对话内容区域 -->
         <div class="dialogue-content-container">
-          <text class="character-name">{{ item.character || '旁白' }}</text>
-          <text class="dialogue-text">{{ item.text }}</text>
+          <text class="character-name-text">{{ item.character || '旁白' }}</text>
+          <text class="dialogue-text-content">{{ item.text }}</text>
         </div>
       </div>
       <div class="list-empty-placeholder" if="{{ !dialogueHistory || dialogueHistory.length === 0 }}">
-          <!-- 修改：给 text 添加类名 -->
           <text class="list-empty-text">还没有对话记录哦~</text>
       </div>
     </scroll>
@@ -33,48 +30,54 @@
   .history-page-container {
     width: 336px;
     height: 480px;
-    background-color: #222222; 
+    background-color: #333333; 
     display: flex;
     flex-direction: column;
     position: relative;
   }
 
-  .header-background {
+  .header-background { 
     position: absolute;
     left: 0;
     top: 0;
     width: 100%;
-    height: 80px;
-    background-color: rgba(0, 0, 0, 0.4); 
+    height: 80px; 
+    background-color: rgba(0, 0, 0, 0.3); 
     z-index: 1;
   }
 
   .real-time-clock {
-    position: absolute;
+    position: absolute; 
     left: 77px;
     top: 7px;
     width: 182px;
     height: 32px;
+    opacity: 1; 
+    background-color: rgba(255, 255, 255, 0.6); 
     font-size: 24px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.7); 
+    letter-spacing: 0px;
+    line-height: 32px; 
+    color: rgba(255, 255, 255, 0.6);
     text-align: center;
-    line-height: 32px;
-    z-index: 2;
+    z-index: 2; 
   }
 
   .history-title {
-    position: absolute;
+    position: absolute; 
     left: 77px;
     top: 35px;
     width: 182px;
     height: 45px;
+    opacity: 1; 
+    background-color: rgba(255, 255, 255, 1); 
     font-size: 32px;
     font-weight: 500;
-    color: rgba(255, 255, 255, 1);
+    letter-spacing: 0px;
+    line-height: 45px; 
+    color: rgba(255, 255, 255, 1); /* 标题文字颜色应与背景形成对比，这里是白色文字在白色背景上，可能需要调整 */
     text-align: center;
-    line-height: 45px;
-    z-index: 2;
+    z-index: 2; 
   }
 
   .back-button {
@@ -83,11 +86,12 @@
     top: 6px;
     width: 72px;
     height: 72px;
+    opacity: 1; 
     z-index: 3;
   }
 
   .history-list-scroll {
-    margin-top: 80px;
+    margin-top: 80px; 
     flex-grow: 1;
     width: 100%;
     padding: 10px 6px; 
@@ -97,9 +101,9 @@
     width: 324px;
     min-height: 112px; 
     height: auto; 
-    border-radius: 12px; 
-    /* 修改：使用 background-color */
-    background-color: rgba(38, 38, 38, 0.9); 
+    opacity: 1; 
+    border-radius: 18px; 
+    background-color: rgba(38, 38, 38, 1); 
     margin-bottom: 12px; 
     display: flex;
     flex-direction: row;
@@ -108,7 +112,7 @@
   }
 
   .character-image-container {
-    width: 70px; 
+    width: 80px; 
     min-height: 92px; 
     display: flex;
     justify-content: center;
@@ -130,26 +134,32 @@
     justify-content: flex-start; 
   }
 
-  .character-name {
+  .character-name-text { 
     height: auto; 
-    padding: 4px 8px; 
-    /* 修改：使用 background-color */
-    background-color: rgba(255, 255, 255, 0.15); 
-    border-radius: 4px;
-    font-size: 18px; 
-    font-weight: 600; 
-    line-height: 24px;
-    color: rgba(220, 220, 220, 1); 
+    opacity: 1; 
+    background-color: rgba(255, 255, 255, 0.6); 
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: 0px;
+    line-height: 28px; 
+    color: rgba(0,0,0,0.7); /* 名字在浅色背景上，用深色字 */
     text-align: left;
+    padding: 4px 8px; 
+    border-radius: 4px;
     margin-bottom: 6px;
   }
 
-  .dialogue-text {
-    font-size: 20px; 
-    font-weight: 400;
-    line-height: 26px; 
-    color: rgba(255, 255, 255, 0.9); 
+  .dialogue-text-content { 
+    opacity: 1; 
+    background-color: rgba(255, 255, 255, 1); 
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: 0px;
+    line-height: 30px; 
+    color: rgba(0,0,0,0.85); 
     text-align: left;
+    padding: 6px 8px; 
+    border-radius: 4px;
   }
 
   .list-empty-placeholder {
@@ -159,8 +169,7 @@
     justify-content: center;
     align-items: center;
   }
-  /* 修改：使用新的类名 */
-  .list-empty-text {
+  .list-empty-text { 
     font-size: 20px;
     color: #777777; 
   }
@@ -179,10 +188,10 @@
     '凯瑟琳': '/common/character/img_catherine.png',
     '凛凛花': '/common/character/img_ririka.png',
   };
-
   const STORAGE_KEYS = { RECOVERY_DATA: 'recoveryData' };
 
   export default {
+    props: ['historyDataParams'], 
     private: {
       dialogueHistory: [],
       currentTime: '',
@@ -190,13 +199,20 @@
       currentChapterContext: null, 
     },
     onInit() {
-      console.log("[History] onInit. Received params:", JSON.stringify(this.historyDataParams)); 
-      if (this.historyDataParams) {
-        this.dialogueHistory = this.historyDataParams.log || [];
-        this.currentChapterContext = this.historyDataParams.chapter;
+      console.log("[History] onInit. Received prop 'historyDataParams':", this.historyDataParams ? JSON.stringify(this.historyDataParams).substring(0, 200) + "..." : "undefined"); 
+      
+      const paramsFromRouter = this.historyDataParams;
+
+      if (paramsFromRouter && paramsFromRouter.log && Array.isArray(paramsFromRouter.log)) {
+        this.dialogueHistory = paramsFromRouter.log;
+        this.currentChapterContext = paramsFromRouter.chapter; 
         console.log("[History] Dialogue history loaded. Count:", this.dialogueHistory.length, "Chapter context:", this.currentChapterContext);
+        if(this.dialogueHistory.length === 0) {
+            console.warn("[History] historyDataParams.log was an empty array.");
+        }
       } else {
-        console.warn("[History] No historyDataParams passed.");
+        console.warn("[History] historyDataParams or historyDataParams.log is invalid or empty. Received prop:", JSON.stringify(this.historyDataParams));
+        this.dialogueHistory = []; 
       }
       this.updateTime();
       this.clockIntervalId = setInterval(this.updateTime.bind(this), 1000 * 30);
@@ -222,7 +238,7 @@
       return CHARACTER_IMAGES[characterName] || '';
     },
     jumpToDialogue(historyItem) {
-      if (!historyItem || historyItem.sceneIndexInChapter === undefined || historyItem.dialogueIndexInScene === undefined) {
+      if (!historyItem || historyItem.sceneIndexInChapter === undefined || historyItem.dialogueIndexInScene === undefined || historyItem.chapterId === undefined) {
         prompt.showToast({ message: "无法跳转，历史记录信息不完整" });
         console.error("[History] Invalid historyItem for jump:", JSON.stringify(historyItem));
         return;
@@ -231,16 +247,17 @@
       router.replace({
         uri: 'pages/detail',
         params: {
-          loadFromHistory: {
+          loadFromHistory: { 
             chapter: historyItem.chapterId,
             scene: historyItem.sceneIndexInChapter,
             dialogue: historyItem.dialogueIndexInScene,
+            choicesMade: historyItem.choicesMadeSnapshot || [] 
           }
         }
       });
     },
     saveDialogueAsRecovery(historyItem) {
-      if (!historyItem || historyItem.sceneIndexInChapter === undefined || historyItem.dialogueIndexInScene === undefined) {
+      if (!historyItem || historyItem.sceneIndexInChapter === undefined || historyItem.dialogueIndexInScene === undefined || historyItem.chapterId === undefined) {
         prompt.showToast({ message: "无法存档，历史记录信息不完整" });
         console.error("[History] Invalid historyItem for save:", JSON.stringify(historyItem));
         return;
@@ -252,7 +269,7 @@
         currentDialogue: historyItem.dialogueIndexInScene,
         choicesMade: historyItem.choicesMadeSnapshot || [], 
         timestamp: new Date().toISOString(),
-        fromHistory: true
+        fromHistory: true 
       };
 
       console.log("[History] Saving recovery from history:", JSON.stringify(recoveryState));
