@@ -1,12 +1,8 @@
 <template>
   <div class="page-container">
-    <!-- Background Image -->
     <image class="bg-image" src="/common/images/bg.png"></image>
-
-    <!-- True Ending Overlay Image -->
     <image class="true-end-visual" src="/common/images/ATRI_TrueEnding.png" if="{{ showTrueEndVisuals }}"></image>
 
-    <!-- Main Menu Buttons Container -->
     <div class="main-menu-button-container" style="top: {{ mainMenuTopOffset }}px;">
       <text class="main-menu-button true-end-button" if="{{ showTrueEndVisuals }}" @click="loadGame('TE')">TRUE END</text>
       <text class="main-menu-button" @click="startGame()">START</text>
@@ -15,7 +11,6 @@
       <text class="main-menu-button" @click="exitApp()">EXIT</text>
     </div>
 
-    <!-- Load Overlay -->
     <div class="overlay load-overlay" if="{{ isLoadOverlayVisible }}">
        <scroll scroll-y="true" bounces="true" class="overlay-scroll">
           <text class="overlay-title">点击读取存档</text>
@@ -25,7 +20,6 @@
        </scroll>
     </div>
 
-    <!-- Tips Overlay -->
     <div class="overlay tips-overlay" if="{{ isTipsOverlayVisible }}">
         <div class="tips-content">
             <text class="tips-text title">提示与信息</text>
@@ -43,21 +37,12 @@
 </template>
 
 <style>
-  /* Base Styles */
   .page-container { width: 336px; height: 480px; position: relative; background-color: #000000; overflow: hidden; }
   .bg-image { width: 100%; height: 100%; object-fit: cover; }
-  .true-end-visual {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: auto;
-  }
+  .true-end-visual { position: absolute; top: 0; left: 0; width: 100%; height: auto; }
 
-  /* === Main Menu Button Styles === */
   .main-menu-button-container {
     position: absolute;
-    /* top 值将通过 mainMenuTopOffset 动态设置 */
     left: 35px;
     display: flex;
     flex-direction: column;
@@ -68,15 +53,12 @@
     font-weight: bold;
     color: #0A55BC;
     padding: 3px 0;
-    margin-bottom: 12px; /* 保持按钮间的固定间距 */
+    margin-bottom: 12px;
   }
   .true-end-button { color: #FFD700; }
   .main-menu-button.disabled { color: #aaaaaa; }
 
-  /* === Overlay Base Styles === */
   .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
-
-  /* Load Overlay */
   .load-overlay { padding: 20px; justify-content: flex-start; }
   .overlay-scroll { width: 100%; flex-grow: 1; display: flex; flex-direction: column; align-items: center; }
   .overlay-title { font-size: 22px; color: #333333; font-weight: bold; margin-bottom: 20px; margin-top: 10px; }
@@ -84,7 +66,6 @@
   .save-load-empty { margin-top: 20px; font-size: 18px; color: #888888; }
   .close-button { margin-top: auto; padding: 10px 20px; font-size: 20px; color: #007aff; }
 
-  /* Tips Overlay */
   .tips-overlay { background-color: rgba(255, 255, 255, 0.98); padding: 20px; }
   .tips-content { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 300px; }
   .tips-text { font-size: 20px; color: #333333; margin-bottom: 12px; }
@@ -113,67 +94,19 @@
     computed: {
         showTrueEndVisuals() { return this.finStatus && this.finStatus.HE === true; },
         hasSaveData() { return this.recoveryData && this.recoveryData.length > 0; },
-
         mainMenuTopOffset() {
-          // 设定一个基础的 top 值，使得当 START 是第一个按钮时，位置比较合适
-          const baseTopForFirstButton = 215; // 这个值可以根据视觉效果微调
-          // TRUE END 按钮及其 margin 大约占用的垂直空间
-          const trueEndButtonSpace = 30 + 12; // 假设字体30，margin-bottom 12
+          // 修复：为两种情况定义不同的容器 top 值，以优化布局
+          const topWithTrueEnd = 195;    // 当 TRUE END 按钮显示时，按钮容器的 top 值 (视觉居中)
+          const topWithoutTrueEnd = 225; // 当 TRUE END 按钮不显示时，按钮容器的 top 值 (稍微向下，减少EXIT下方空隙)
+                                         // 这个值可以根据实际按钮数量和高度微调，目标是让EXIT按钮底部位置相对稳定
 
           if (this.showTrueEndVisuals) {
-            // 如果显示 TRUE END，我们希望 TRUE END 按钮在 baseTopForFirstButton 的位置
-            return baseTopForFirstButton;
+            return topWithTrueEnd;
           } else {
-            // 如果不显示 TRUE END，我们希望 START 按钮在 baseTopForFirstButton 的位置
-            // 但是，由于 START 按钮在 TRUE END 按钮之后，
-            // 如果我们直接返回 baseTopForFirstButton，会导致 START 按钮位置正确，
-            // 但因为少了一个按钮，EXIT 下方会有空隙。
-            // 所以，当没有 TRUE END 按钮时，整个按钮组应该向上移动一个按钮的空间。
-            // 这样，START 按钮会出现在 baseTopForFirstButton - trueEndButtonSpace 的位置，
-            // 这可能太靠上了。
-
-            // 让我们重新思考：
-            // 目标：无论 TRUE END 是否显示，按钮列表的整体视觉中心或底部大致不变。
-            // 或者，第一个可见按钮的起始位置是固定的。
-
-            // 如果我们希望第一个可见按钮（TRUE END 或 START）都从大约 215px 的位置开始：
-            return 215; // 无论如何，第一个按钮都从 215px 开始。
-                        // 这样，当 TRUE END 不显示时，START 从 215px 开始，
-                        // 由于少了一个按钮，EXIT 会更靠上，其下方空隙会变大。
-                        // 这与问题描述一致。
-
-            // 解决空隙问题的核心是：当按钮数量减少时，如何处理多余的空间。
-            // 如果我们希望按钮列表的底部对齐，或者最后一个按钮（EXIT）的位置相对固定。
-            // 假设 EXIT 按钮理想的 top 位置是 Y_exit。
-            // 有 TRUE END: container_top + 4 * (button_height + margin) + exit_button_height = Y_exit_bottom
-            // 无 TRUE END: new_container_top + 3 * (button_height + margin) + exit_button_height = Y_exit_bottom
-            // 这太复杂了。
-
-            // 最简单的处理方法：
-            // 保持按钮间的 margin-bottom 不变。
-            // 当 TRUE END 不显示时，将整个容器向上移动，使得 START 按钮占据原来 TRUE END 的位置。
-            // 这样，EXIT 按钮也会相应上移，其下方的空隙会自然减小。
-            const topWhenTrueEndIsVisible = 215; // 假设这是 TRUE END 按钮的理想起始 top
-            const spaceOfOneButton = 30 + 12; // 按钮高度 + margin
-
-            if (this.showTrueEndVisuals) {
-                return topWhenTrueEndIsVisible;
-            } else {
-                // 当 TRUE END 不显示时，我们希望 START 按钮出现在 topWhenTrueEndIsVisible 的位置
-                // 由于 START 是列表中的第二个元素（逻辑上），而容器的 top 是针对第一个元素的
-                // 所以，容器的 top 应该设置为 topWhenTrueEndIsVisible
-                // 这样 START 按钮就会从 topWhenTrueEndIsVisible 开始。
-                // 此时，因为列表少了一个按钮，EXIT 按钮会更靠上，其下方的空隙会变大。
-                // 这与问题描述一致。
-
-                // 为了解决空隙，我们需要让整个按钮组在没有 TRUE END 时向上移动。
-                // 移动的距离正好是一个按钮所占的空间。
-                return topWhenTrueEndIsVisible - spaceOfOneButton;
-            }
+            return topWithoutTrueEnd;
           }
         }
     },
-
     onInit() {
       console.log("[Index] onInit: Loading initial data.");
       this.loadRecoveryData()
@@ -181,7 +114,6 @@
           .then(() => this.checkIfTipsNeeded())
           .catch(err => { console.error("[Index] Load chain error:", err); this.checkIfTipsNeeded(); });
     },
-
     loadRecoveryData() { return new Promise((resolve) => {
         storage.get({ key: STORAGE_KEYS.RECOVERY_DATA,
             success: (d) => { if (d) { try { this.recoveryData = JSON.parse(d); } catch (e) { this.recoveryData = []; } } else { this.recoveryData = []; } resolve(); },
@@ -199,21 +131,27 @@
          fail: (d,c) => { console.warn(`[Index] Check tips fail: ${d}, ${c}`); setTimeout(() => { this.isTipsOverlayVisible = true; }, 0); },
          complete: () => {} });
      },
-
     startGame() {
       router.push({ uri: 'pages/detail' }); prompt.showToast({ message: "加载游戏中..." });
     },
     loadGame(indexOrType) {
         let loadParam;
-         if (typeof indexOrType === 'number') { if (indexOrType >= 0 && indexOrType < this.recoveryData.length) { loadParam = { type: 'load', index: indexOrType }; prompt.showToast({ message: `读取存档 ${indexOrType + 1}...` }); } else { prompt.showToast({ message: "无效存档" }); return; } }
-         else if (indexOrType === 'TE') { loadParam = { type: 'TE' }; prompt.showToast({ message: "加载路线..." }); } else { prompt.showToast({ message: "无效类型" }); return; }
-         this.hideLoadOverlay(); router.push({ uri: `pages/detail`, params: { load: loadParam } });
+         if (typeof indexOrType === 'number') {
+             if (indexOrType >= 0 && indexOrType < this.recoveryData.length) {
+                 loadParam = { type: 'load', index: indexOrType };
+                 prompt.showToast({ message: `读取存档 ${indexOrType + 1}...` });
+             } else {
+                 prompt.showToast({ message: "无效存档" }); return;
+             }
+         }
+         else if (indexOrType === 'TE') { loadParam = { type: 'TE' }; prompt.showToast({ message: "加载路线..." }); }
+         else { prompt.showToast({ message: "无效类型" }); return; }
+         this.hideLoadOverlay();
+         router.push({ uri: `pages/detail`, params: { load: loadParam } });
     },
     exitApp() { try { this.$app.exit(); } catch(e) { prompt.showToast({ message: "无法退出" }); } },
-
     showLoadOverlay() { if (this.hasSaveData) { this.isLoadOverlayVisible = true; } else { prompt.showToast({message: "没有存档"}); } },
     hideLoadOverlay() { this.isLoadOverlayVisible = false; },
-
     showSettingsOverlay() {
         console.log("[Index] showSettingsOverlay called. Navigating to settings page.");
         router.push({ uri: 'pages/settings' });
