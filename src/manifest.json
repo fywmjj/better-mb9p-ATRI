@@ -29,6 +29,9 @@
       },
       "pages/settings": {
         "component": "settings"
+      },
+      "pages/history": {
+        "component": "history"
       }
     }
   }

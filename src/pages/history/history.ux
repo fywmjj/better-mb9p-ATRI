@@ -1,0 +1,307 @@
+<template>
+  <div class="history-page-container">
+    <!-- 顶部背景和标题 -->
+    <div class="header-background"></div>
+    <text class="real-time-clock">{{ currentTime }}</text>
+    <text class="history-title">对话回顾</text>
+
+    <!-- 返回按钮 -->
+    <image class="back-button" src="/common/gui/backButton.png" @click="goBack"></image>
+
+    <!-- 对话列表 -->
+    <scroll class="history-list-scroll" scroll-y="true" bounces="true">
+      <div class="history-list-item" for="{{ (index, item) in dialogueHistory }}" @click="jumpToDialogue(item)" @longpress="saveDialogueAsRecovery(item)">
+        <!-- 角色图片区域 -->
+        <div class="character-image-container">
+          <image class="character-image" src="{{ getCharacterImage(item.character) }}" if="{{ getCharacterImage(item.character) }}"></image>
+        </div>
+        <!-- 对话内容区域 -->
+        <div class="dialogue-content-container">
+          <text class="character-name">{{ item.character || '旁白' }}</text>
+          <text class="dialogue-text">{{ item.text }}</text>
+        </div>
+      </div>
+      <div class="list-empty-placeholder" if="{{ !dialogueHistory || dialogueHistory.length === 0 }}">
+          <text>还没有对话记录哦~</text>
+      </div>
+    </scroll>
+  </div>
+</template>
+
+<style>
+  .history-page-container {
+    width: 336px;
+    height: 480px;
+    background-color: #222222; /* 深色背景，比 #333 更深一点 */
+    display: flex;
+    flex-direction: column;
+    position: relative;
+  }
+
+  .header-background {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 80px;
+    background-color: rgba(0, 0, 0, 0.4); /* 更深的半透明背景 */
+    z-index: 1;
+  }
+
+  .real-time-clock {
+    position: absolute;
+    left: 77px;
+    top: 7px;
+    width: 182px;
+    height: 32px;
+    font-size: 24px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.7); /* 提高一点对比度 */
+    text-align: center;
+    line-height: 32px;
+    z-index: 2;
+  }
+
+  .history-title {
+    position: absolute;
+    left: 77px;
+    top: 35px;
+    width: 182px;
+    height: 45px;
+    font-size: 32px;
+    font-weight: 500;
+    color: rgba(255, 255, 255, 1);
+    text-align: center;
+    line-height: 45px;
+    z-index: 2;
+  }
+
+  .back-button {
+    position: absolute;
+    left: 6px;
+    top: 6px;
+    width: 72px;
+    height: 72px;
+    z-index: 3;
+  }
+
+  .history-list-scroll {
+    margin-top: 80px;
+    flex-grow: 1;
+    width: 100%;
+    padding: 10px 6px; /* 增加顶部和底部的 padding */
+  }
+
+  .history-list-item {
+    width: 324px;
+    min-height: 112px; /* 使用 min-height 允许内容扩展 */
+    height: auto; /* 高度自适应 */
+    border-radius: 12px; /* 稍微减小圆角 */
+    background: rgba(38, 38, 38, 0.9); /* 背景稍微透明一点，增加层次感 */
+    margin-bottom: 12px; /* 增加列表项间距 */
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start; /* 从顶部对齐，允许文本区域扩展 */
+    padding: 10px;
+  }
+
+  .character-image-container {
+    width: 70px; /* 稍微减小宽度 */
+    min-height: 92px; /* 确保即使没有图片也有最小高度 (112 - 10*2) */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    overflow: hidden;
+    margin-right: 12px;
+    flex-shrink: 0; /* 防止被压缩 */
+  }
+
+  .character-image {
+    width: 100%;
+    height: auto;
+    /* 尝试让图片顶部和容器顶部对齐，然后只显示一部分 */
+    /* 如果图片本身就是头部，这个可能不需要特别处理 */
+  }
+
+  .dialogue-content-container {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start; /* 从顶部开始 */
+  }
+
+  .character-name {
+    height: auto; /* 自适应高度 */
+    padding: 4px 8px; /* 增加内边距 */
+    background: rgba(255, 255, 255, 0.15); /* 非常淡的背景，区分一下 */
+    border-radius: 4px;
+    font-size: 18px; /* 调小一点 */
+    font-weight: 600; /* 加粗 */
+    line-height: 24px;
+    color: rgba(220, 220, 220, 1); /* 更亮的文本颜色 */
+    text-align: left;
+    margin-bottom: 6px;
+    /* width: auto; */ /* 宽度自适应 */
+    /* max-width: 100px; */ /* 如果需要限制名字长度 */
+    /* text-overflow: ellipsis; */
+    /* lines: 1; */
+  }
+
+  .dialogue-text {
+    font-size: 20px; /* 调整对话文本大小 */
+    font-weight: 400;
+    line-height: 26px; /* 调整行高以获得更好的阅读体验 */
+    color: rgba(255, 255, 255, 0.9); /* 文本颜色不要纯白，柔和一点 */
+    text-align: left;
+    /* 允许文本自动换行，不需要固定行数 */
+    /* lines: 3; */
+    /* text-overflow: ellipsis; */
+  }
+
+  .list-empty-placeholder {
+    width: 100%;
+    height: 200px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .list-empty-placeholder text {
+    font-size: 20px;
+    color: #777777; /* 更柔和的占位符颜色 */
+  }
+</style>
+
+<script>
+  import router from '@system.router';
+  import storage from '@system.storage';
+  import prompt from '@system.prompt';
+  // import device from '@system.device'; // 如果需要更精确的时间格式化，但通常 new Date() 足够
+
+  const CHARACTER_IMAGES = {
+    '夏生': '/common/character/img_natsuki.png',
+    '亚托莉': '/common/character/img_atri.png',
+    '水菜萌': '/common/character/img_minamo.png',
+    '龙司': '/common/character/img_ryuji.png',
+    '凯瑟琳': '/common/character/img_catherine.png',
+    '凛凛花': '/common/character/img_ririka.png',
+  };
+
+  const STORAGE_KEYS = { RECOVERY_DATA: 'recoveryData' };
+
+  export default {
+    private: {
+      dialogueHistory: [],
+      currentTime: '',
+      clockIntervalId: null,
+      // 从 detail 页传递过来的当前游戏上下文信息
+      currentChapterContext: null, // 例如: 'b101'
+      // currentSceneContext: null, // 例如: 0 (当前场景在章节内的索引)
+      // currentDialogueContext: null, // 例如: 5 (当前对话在场景内的索引)
+      // choicesMadeContext: [], // 当前已做选择
+    },
+    onInit() {
+      console.log("[History] onInit. Received params:", JSON.stringify(this.historyDataParams)); // 假设路由参数名为 historyDataParams
+      if (this.historyDataParams) {
+        this.dialogueHistory = this.historyDataParams.log || [];
+        this.currentChapterContext = this.historyDataParams.chapter;
+        // this.currentSceneContext = this.historyDataParams.scene; // 这个是打开历史记录时的场景
+        // this.currentDialogueContext = this.historyDataParams.dialogue;
+        // this.choicesMadeContext = this.historyDataParams.choicesMade || [];
+        console.log("[History] Dialogue history loaded. Count:", this.dialogueHistory.length, "Chapter context:", this.currentChapterContext);
+      } else {
+        console.warn("[History] No historyDataParams passed.");
+      }
+      this.updateTime();
+      this.clockIntervalId = setInterval(this.updateTime.bind(this), 1000 * 30);
+    },
+    onDestroy() {
+      console.log("[History] onDestroy");
+      if (this.clockIntervalId) {
+        clearInterval(this.clockIntervalId);
+        this.clockIntervalId = null;
+      }
+    },
+    updateTime() {
+      const now = new Date();
+      const hours = now.getHours().toString().padStart(2, '0');
+      const minutes = now.getMinutes().toString().padStart(2, '0');
+      this.currentTime = `${hours}:${minutes}`;
+    },
+    goBack() {
+      console.log("[History] Go back clicked.");
+      router.back();
+    },
+    getCharacterImage(characterName) {
+      return CHARACTER_IMAGES[characterName] || '';
+    },
+    jumpToDialogue(historyItem) {
+      // historyItem 应该包含 { chapterId, sceneIndexInChapter, dialogueIndexInScene }
+      // 这些信息应该在 detail.ux 填充 fullDialogueLog 时就记录好
+      if (!historyItem || historyItem.sceneIndexInChapter === undefined || historyItem.dialogueIndexInScene === undefined) {
+        prompt.showToast({ message: "无法跳转，历史记录信息不完整" });
+        console.error("[History] Invalid historyItem for jump:", JSON.stringify(historyItem));
+        return;
+      }
+      console.log(`[History] Jumping to dialogue: Chapter=${historyItem.chapterId}, Scene=${historyItem.sceneIndexInChapter}, Dialogue=${historyItem.dialogueIndexInScene}`);
+      router.replace({
+        uri: 'pages/detail',
+        params: {
+          loadFromHistory: {
+            chapter: historyItem.chapterId,
+            scene: historyItem.sceneIndexInChapter,
+            dialogue: historyItem.dialogueIndexInScene,
+            // choicesMade: historyItem.choicesMadeSnapshot || [] // 如果有记录分支状态
+          }
+        }
+      });
+    },
+    saveDialogueAsRecovery(historyItem) {
+      if (!historyItem || historyItem.sceneIndexInChapter === undefined || historyItem.dialogueIndexInScene === undefined) {
+        prompt.showToast({ message: "无法存档，历史记录信息不完整" });
+        console.error("[History] Invalid historyItem for save:", JSON.stringify(historyItem));
+        return;
+      }
+
+      const recoveryState = {
+        chapter: historyItem.chapterId, // 使用历史项中记录的章节ID
+        currentScene: historyItem.sceneIndexInChapter,
+        currentDialogue: historyItem.dialogueIndexInScene,
+        choicesMade: historyItem.choicesMadeSnapshot || [], // 如果在记录历史时保存了当时的选项
+        timestamp: new Date().toISOString(),
+        fromHistory: true
+      };
+
+      console.log("[History] Saving recovery from history:", JSON.stringify(recoveryState));
+
+      storage.get({
+        key: STORAGE_KEYS.RECOVERY_DATA,
+        success: (data) => {
+          let recoveryData = [];
+          if (data) {
+            try { recoveryData = JSON.parse(data); } catch (e) { console.error("Error parsing recovery data:", e); }
+          }
+          if (recoveryData.length >= 10) {
+            prompt.showToast({ message: '存档已满 (最多10个)' });
+            return;
+          }
+          recoveryData.push(recoveryState);
+          storage.set({
+            key: STORAGE_KEYS.RECOVERY_DATA,
+            value: JSON.stringify(recoveryData),
+            success: () => {
+              prompt.showToast({ message: `从历史点新增存档 ${recoveryData.length} 成功` });
+            },
+            fail: (d, c) => {
+              prompt.showToast({ message: '保存失败' });
+              console.error(`Save recovery from history fail: ${d}, ${c}`);
+            }
+          });
+        },
+        fail: (d, c) => {
+          prompt.showToast({ message: '读取存档列表失败' });
+          console.error(`Load recovery list fail: ${d}, ${c}`);
+        }
+      });
+    }
+  }
+</script>
