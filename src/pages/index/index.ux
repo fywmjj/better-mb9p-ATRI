@@ -37,27 +37,14 @@
 </template>
 
 <style>
+  /* CSS 保持不变 */
   .page-container { width: 336px; height: 480px; position: relative; background-color: #000000; overflow: hidden; }
   .bg-image { width: 100%; height: 100%; object-fit: cover; }
   .true-end-visual { position: absolute; top: 0; left: 0; width: 100%; height: auto; }
-
-  .main-menu-button-container {
-    position: absolute;
-    left: 35px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .main-menu-button {
-    font-size: 30px;
-    font-weight: bold;
-    color: #0A55BC;
-    padding: 3px 0;
-    margin-bottom: 12px;
-  }
+  .main-menu-button-container { position: absolute; left: 35px; display: flex; flex-direction: column; align-items: flex-start; }
+  .main-menu-button { font-size: 30px; font-weight: bold; color: #0A55BC; padding: 3px 0; margin-bottom: 12px; }
   .true-end-button { color: #FFD700; }
   .main-menu-button.disabled { color: #aaaaaa; }
-
   .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
   .load-overlay { padding: 20px; justify-content: flex-start; }
   .overlay-scroll { width: 100%; flex-grow: 1; display: flex; flex-direction: column; align-items: center; }
@@ -65,7 +52,6 @@
   .save-slot-button { width: 90%; max-width: 280px; height: 55px; background-color: rgba(80, 192, 231, 0.8); color: #ffffff; font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 15px; display: flex; justify-content: center; align-items: center; border-radius: 8px; flex-shrink: 0; }
   .save-load-empty { margin-top: 20px; font-size: 18px; color: #888888; }
   .close-button { margin-top: auto; padding: 10px 20px; font-size: 20px; color: #007aff; }
-
   .tips-overlay { background-color: rgba(255, 255, 255, 0.98); padding: 20px; }
   .tips-content { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 300px; }
   .tips-text { font-size: 20px; color: #333333; margin-bottom: 12px; }
@@ -95,11 +81,8 @@
         showTrueEndVisuals() { return this.finStatus && this.finStatus.HE === true; },
         hasSaveData() { return this.recoveryData && this.recoveryData.length > 0; },
         mainMenuTopOffset() {
-          // 修复：为两种情况定义不同的容器 top 值，以优化布局
-          const topWithTrueEnd = 195;    // 当 TRUE END 按钮显示时，按钮容器的 top 值 (视觉居中)
-          const topWithoutTrueEnd = 225; // 当 TRUE END 按钮不显示时，按钮容器的 top 值 (稍微向下，减少EXIT下方空隙)
-                                         // 这个值可以根据实际按钮数量和高度微调，目标是让EXIT按钮底部位置相对稳定
-
+          const topWithTrueEnd = 195; 
+          const topWithoutTrueEnd = 225; 
           if (this.showTrueEndVisuals) {
             return topWithTrueEnd;
           } else {
@@ -132,11 +115,15 @@
          complete: () => {} });
      },
     startGame() {
-      router.push({ uri: 'pages/detail' }); prompt.showToast({ message: "加载游戏中..." });
+      console.log("[Index] startGame clicked. Navigating to detail with no specific load params.");
+      // 点击 START 时，不传递任何 load 参数，detail 页面会默认从 chapter 0 开始
+      router.push({ uri: 'pages/detail' }); 
+      prompt.showToast({ message: "加载剧情中..." });
     },
     loadGame(indexOrType) {
         let loadParam;
-         if (typeof indexOrType === 'number') {
+        console.log(`[Index] loadGame called with: ${indexOrType}`);
+         if (typeof indexOrType === 'number') { // 加载存档
              if (indexOrType >= 0 && indexOrType < this.recoveryData.length) {
                  loadParam = { type: 'load', index: indexOrType };
                  prompt.showToast({ message: `读取存档 ${indexOrType + 1}...` });
@@ -144,9 +131,14 @@
                  prompt.showToast({ message: "无效存档" }); return;
              }
          }
-         else if (indexOrType === 'TE') { loadParam = { type: 'TE' }; prompt.showToast({ message: "加载路线..." }); }
-         else { prompt.showToast({ message: "无效类型" }); return; }
+         else if (indexOrType === 'TE') { // 加载 True End
+             loadParam = { type: 'TE' }; 
+             prompt.showToast({ message: "加载 True End 路线..." });
+         }
+         else { prompt.showToast({ message: "无效加载类型" }); return; } // 未知类型
+
          this.hideLoadOverlay();
+         console.log("[Index] Navigating to detail with loadParam:", JSON.stringify(loadParam));
          router.push({ uri: `pages/detail`, params: { load: loadParam } });
     },
     exitApp() { try { this.$app.exit(); } catch(e) { prompt.showToast({ message: "无法退出" }); } },
