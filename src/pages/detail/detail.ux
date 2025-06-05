@@ -151,10 +151,9 @@
         console.log(`[Detail] ONINIT START. Prop 'load' received: ${JSON.stringify(this.load)}`);
         console.log(`[Detail] ONINIT START. Prop 'loadFromHistory' received: ${JSON.stringify(this.loadFromHistory)}`);
 
-        // 修改：移除 async/await 和 try/catch，直接使用回调链
-        this.loadSettingsAndRecovery(() => {
-            // 这个回调在 settings 和 recovery 都加载完毕后执行
-            console.log("[Detail] ONINIT: Settings and Recovery loaded successfully (callback).");
+        // 定义一个函数来处理后续的游戏启动逻辑，这个函数将在 loadSettingsAndRecovery 成功后被调用
+        const proceedWithGameLoad = () => {
+            console.log("[Detail] ONINIT: proceedWithGameLoad called.");
             if (this.loadFromHistory && typeof this.loadFromHistory === 'object') {
                 console.log("[Detail] ONINIT: Processing 'loadFromHistory'. Data:", JSON.stringify(this.loadFromHistory));
                 const { chapter, scene, dialogue, choicesMade } = this.loadFromHistory;
@@ -173,15 +172,20 @@
                 console.log("[Detail] ONINIT: No specific load params, starting new game (chapter 0).");
                 this.startGameFromInitData({ type: 'chapter', index: 0 });
             }
-        }, (error) => {
-            // loadSettingsAndRecovery 失败的回调
-            console.error("[Detail] ONINIT: Critical error during loadSettingsAndRecovery. Error:", error);
+        };
+
+        // 定义加载失败的处理
+        const handleLoadError = (error) => {
+            console.error("[Detail] ONINIT: Critical error during loadSettingsAndRecovery. Error:", JSON.stringify(error)); // 打印错误对象
             this.isDataLoading = false; 
             prompt.showToast({message: "初始化存储失败，请重试"});
             setTimeout(() => {
                 router.replace({uri: "/pages/index"});
             }, 1500);
-        });
+        };
+        
+        // 调用 loadSettingsAndRecovery，并传入回调
+        this.loadSettingsAndRecovery(proceedWithGameLoad, handleLoadError);
     },
     onShow() {
       console.log("[Detail] onShow triggered. Reloading settings.");
@@ -201,7 +205,6 @@
       });
     },
     onDestroy() {
-      // 修复：确保 clearTypingTimeout 是一个方法
       if (typeof this.clearTypingTimeout === 'function') {
         this.clearTypingTimeout();
       } else {
@@ -209,43 +212,85 @@
       }
     },
 
-    loadSettingsAndRecovery(successCallback, errorCallback) { // 接收成功和失败回调
+    loadSettingsAndRecovery(successCallback, errorCallback) {
         console.log("[Detail] loadSettingsAndRecovery called (callback version).");
         let settingsLoaded = false;
         let recoveryLoaded = false;
         let settingsError = null;
         let recoveryError = null;
+        let settingsData = null; // 用于存储 settings 的原始数据
+        let recoveryRawData = null; // 用于存储 recovery 的原始数据
+
+        const tryParseAndSetSettings = () => {
+            if (settingsData) {
+                try {
+                    const s = JSON.parse(settingsData);
+                    this.settings = { ...DEFAULT_SETTINGS_DETAIL, ...s };
+                } catch (e) {
+                    console.error("[Detail] Parse settings in LSaR failed", e);
+                    settingsError = e; // 记录解析错误
+                    this.settings = { ...DEFAULT_SETTINGS_DETAIL }; // 使用默认值
+                }
+            } else { // 如果 settingsData 为 null (例如读取失败)
+                this.settings = { ...DEFAULT_SETTINGS_DETAIL }; // 使用默认值
+            }
+            console.log("[Detail] LSaR: Settings processed:", JSON.stringify(this.settings));
+        };
+
+        const tryParseAndSetRecovery = () => {
+            console.log("[Detail] LSaR: Recovery data raw from storage:", recoveryRawData ? recoveryRawData.substring(0, 50) + "..." : "null");
+            if (recoveryRawData) {
+                try {
+                    this.recoveryData = JSON.parse(recoveryRawData);
+                } catch (e) {
+                    this.recoveryData = [];
+                    console.error("[Detail] LSaR: Failed to parse recoveryData", e);
+                    recoveryError = e; // 记录解析错误
+                }
+            } else {
+                this.recoveryData = [];
+            }
+            console.log(`[Detail] LSaR: Recovery processed, count: ${this.recoveryData.length}.`);
+        };
+
 
         const checkCompletion = () => {
             if (settingsLoaded && recoveryLoaded) {
+                // 先处理数据解析和赋值
+                tryParseAndSetSettings();
+                tryParseAndSetRecovery();
+
+                // 然后再判断是否有错误并调用回调
                 if (settingsError || recoveryError) {
-                    console.error("[Detail] LSaR: Errors occurred during loading.", {settingsError, recoveryError});
-                    if (errorCallback) errorCallback({settingsError, recoveryError});
+                    console.error("[Detail] LSaR: Errors occurred during loading or parsing.", {settingsError, recoveryError});
+                    if (errorCallback && typeof errorCallback === 'function') { // 确保 errorCallback 是函数
+                        errorCallback({settingsError, recoveryError});
+                    } else {
+                        console.error("[Detail] LSaR: errorCallback is not a function or not provided.");
+                    }
                 } else {
-                    console.log("[Detail] LSaR: Both settings and recovery loaded successfully.");
-                    if (successCallback) successCallback();
+                    console.log("[Detail] LSaR: Both settings and recovery processed successfully.");
+                    if (successCallback && typeof successCallback === 'function') { // 确保 successCallback 是函数
+                        successCallback();
+                    } else {
+                         console.error("[Detail] LSaR: successCallback is not a function or not provided.");
+                    }
                 }
             }
         };
 
         storage.get({ key: STORAGE_KEYS.SETTINGS,
             success: (d) => {
-                let s = {};
-                if (d) { try { s = JSON.parse(d); } catch (e) {console.error("[Detail] Parse settings in LSaR failed", e); settingsError = e;} }
-                this.settings = { ...DEFAULT_SETTINGS_DETAIL, ...s }; 
-                console.log("[Detail] LSaR: Settings loaded:", JSON.stringify(this.settings));
+                settingsData = d; // 先保存原始数据
             },
             fail: (d,c) => { console.warn(`[Detail] LSaR: Load settings fail: ${d}, ${c}`); settingsError = {d,c}; },
             complete: () => { settingsLoaded = true; checkCompletion(); }
         });
         storage.get({ key: STORAGE_KEYS.RECOVERY_DATA,
             success: (d) => {
-                console.log("[Detail] LSaR: Recovery data raw from storage:", d ? d.substring(0, 50) + "..." : "null"); // 缩短日志
-                if (d) { try { this.recoveryData = JSON.parse(d); } catch (e) { this.recoveryData = []; console.error("[Detail] LSaR: Failed to parse recoveryData", e); recoveryError = e;} }
-                else { this.recoveryData = []; }
-                console.log(`[Detail] LSaR: Recovery loaded, count: ${this.recoveryData.length}.`);
+                recoveryRawData = d; // 先保存原始数据
             },
-            fail: (d,c) => { console.warn(`[Detail] LSaR: Load recovery fail: ${d}, ${c}`); recoveryError = {d,c}; this.recoveryData = []; /* 失败时确保是空数组 */ },
+            fail: (d,c) => { console.warn(`[Detail] LSaR: Load recovery fail: ${d}, ${c}`); recoveryError = {d,c}; },
             complete: () => { recoveryLoaded = true; checkCompletion(); }
         });
     },
@@ -253,9 +298,7 @@
     // ... (startGameFromInitData, resetGameState, loadChapterData, loadChapterDataInternal, applyCurrentSceneState, loadScene, loadDialogue 等方法中的日志保持或按需调整)
     // 确保 isDataLoading = false; 在所有异步数据加载完成后（成功或失败）被调用，通常在 loadChapterDataInternal 的 success/fail 回调中。
 
-    // ... (其他方法保持不变)
-
-    clearTypingTimeout() { // 确保方法定义正确
+    clearTypingTimeout() { 
       if (this.typingTimeoutId) {
         clearTimeout(this.typingTimeoutId);
         this.typingTimeoutId = null;
@@ -275,7 +318,7 @@
         if(logWithContext.length === 0) {
             console.warn("[Detail] fullDialogueLog is empty when trying to open history! This is unexpected if dialogues have occurred.");
         }
-        const MAX_HISTORY_ITEMS = 50; // 临时限制为50条，减少卡顿
+        const MAX_HISTORY_ITEMS = 50; 
         const slicedLog = logWithContext.slice(-MAX_HISTORY_ITEMS);
         console.log(`[Detail] Passing ${slicedLog.length} items to history page.`);
 
