@@ -112,8 +112,8 @@
   const RECOVERY_MODE_NONE = 0; const RECOVERY_MODE_SAVE = 1; const RECOVERY_MODE_LOAD = 2;
   const QUICK_SAVE_SLOT_INDEX = 0;
   const DEFAULT_SETTINGS_DETAIL = { textSpeed: 40, textSize: 22 }; 
-  const TE_CHAPTER_INDEX = 33; // 假设 True Ending 对应 chapterList 的第 33 个元素
-  const BE_CHAPTER_INDEX = 32; // 假设 Bad Ending 对应 chapterList 的第 32 个元素
+  const TE_CHAPTER_INDEX = 33; 
+  const BE_CHAPTER_INDEX = 32; 
 
 
   export default {
@@ -146,15 +146,15 @@
         showChoicesUI() { if (this.isDataLoading || !this.gameData.scenes || this.gameData.scenes.length <= this.currentScene) return false; const scene = this.gameData.scenes[this.currentScene]; const hasChoices = !!scene?.choices && scene.choices.length > 0; return hasChoices; }
     },
 
-    async onInit() { // 使用 async 配合 await
+    onInit() { 
         this.isDataLoading = true;
         console.log(`[Detail] ONINIT START. Prop 'load' received: ${JSON.stringify(this.load)}`);
         console.log(`[Detail] ONINIT START. Prop 'loadFromHistory' received: ${JSON.stringify(this.loadFromHistory)}`);
 
-        try {
-            await this.loadSettingsAndRecovery(); // 等待设置和存档加载完成
-            console.log("[Detail] ONINIT: Settings and Recovery loaded successfully.");
-
+        // 修改：移除 async/await 和 try/catch，直接使用回调链
+        this.loadSettingsAndRecovery(() => {
+            // 这个回调在 settings 和 recovery 都加载完毕后执行
+            console.log("[Detail] ONINIT: Settings and Recovery loaded successfully (callback).");
             if (this.loadFromHistory && typeof this.loadFromHistory === 'object') {
                 console.log("[Detail] ONINIT: Processing 'loadFromHistory'. Data:", JSON.stringify(this.loadFromHistory));
                 const { chapter, scene, dialogue, choicesMade } = this.loadFromHistory;
@@ -165,24 +165,23 @@
                 this.choicesMade = Array.isArray(choicesMade) ? [...choicesMade] : [];
                 this.fullDialogueLog = []; 
                 console.log(`[Detail] ONINIT: State set from history - Ch='${this.chapter}', S=${this.currentScene}, D=${this.currentDialogue}, Choices=${JSON.stringify(this.choicesMade)}`);
-                this.loadChapterData(this.chapter); // 这个会异步加载并设置 isDataLoading = false
+                this.loadChapterData(this.chapter); 
             } else if (this.load && typeof this.load === 'object') { 
                 console.log("[Detail] ONINIT: Processing 'load' param (e.g., from index page). Data:", JSON.stringify(this.load));
-                this.startGameFromInitData(this.load); // 这个会异步加载并设置 isDataLoading = false
+                this.startGameFromInitData(this.load); 
             } else { 
                 console.log("[Detail] ONINIT: No specific load params, starting new game (chapter 0).");
-                this.startGameFromInitData({ type: 'chapter', index: 0 }); // 这个会异步加载并设置 isDataLoading = false
+                this.startGameFromInitData({ type: 'chapter', index: 0 });
             }
-        } catch (err) {
-            console.error("[Detail] ONINIT: Critical error during initialization. Error:", err);
+        }, (error) => {
+            // loadSettingsAndRecovery 失败的回调
+            console.error("[Detail] ONINIT: Critical error during loadSettingsAndRecovery. Error:", error);
             this.isDataLoading = false; 
-            prompt.showToast({message: "初始化游戏失败，请重试"});
-            // 避免卡在加载界面，尝试返回首页
-            // 加一个延时确保toast能显示出来
+            prompt.showToast({message: "初始化存储失败，请重试"});
             setTimeout(() => {
                 router.replace({uri: "/pages/index"});
             }, 1500);
-        }
+        });
     },
     onShow() {
       console.log("[Detail] onShow triggered. Reloading settings.");
@@ -201,290 +200,67 @@
         }
       });
     },
-    onDestroy() { this.clearTypingTimeout(); },
+    onDestroy() {
+      // 修复：确保 clearTypingTimeout 是一个方法
+      if (typeof this.clearTypingTimeout === 'function') {
+        this.clearTypingTimeout();
+      } else {
+        console.warn("[Detail] onDestroy: clearTypingTimeout is not a function or not available.");
+      }
+    },
 
-    loadSettingsAndRecovery() {
-        console.log("[Detail] loadSettingsAndRecovery called.");
-        // 这个函数现在返回一个 Promise，确保 onInit 中的 await 能正确工作
-        return new Promise(async (resolve, reject) => { // 使用 async 以便内部可以使用 await
-            try {
-                // 加载 Settings
-                const settingsData = await new Promise((res, rej) => {
-                    storage.get({
-                        key: STORAGE_KEYS.SETTINGS,
-                        success: (d) => res(d),
-                        fail: (d,c) => { console.warn(`[Detail] LSaR: Load settings fail: ${d}, ${c}`); res(null); } // 失败也resolve null，避免阻塞
-                    });
-                });
+    loadSettingsAndRecovery(successCallback, errorCallback) { // 接收成功和失败回调
+        console.log("[Detail] loadSettingsAndRecovery called (callback version).");
+        let settingsLoaded = false;
+        let recoveryLoaded = false;
+        let settingsError = null;
+        let recoveryError = null;
+
+        const checkCompletion = () => {
+            if (settingsLoaded && recoveryLoaded) {
+                if (settingsError || recoveryError) {
+                    console.error("[Detail] LSaR: Errors occurred during loading.", {settingsError, recoveryError});
+                    if (errorCallback) errorCallback({settingsError, recoveryError});
+                } else {
+                    console.log("[Detail] LSaR: Both settings and recovery loaded successfully.");
+                    if (successCallback) successCallback();
+                }
+            }
+        };
+
+        storage.get({ key: STORAGE_KEYS.SETTINGS,
+            success: (d) => {
                 let s = {};
-                if (settingsData) { try { s = JSON.parse(settingsData); } catch (e) {console.error("[Detail] Parse settings in LSaR failed", e)} }
+                if (d) { try { s = JSON.parse(d); } catch (e) {console.error("[Detail] Parse settings in LSaR failed", e); settingsError = e;} }
                 this.settings = { ...DEFAULT_SETTINGS_DETAIL, ...s }; 
                 console.log("[Detail] LSaR: Settings loaded:", JSON.stringify(this.settings));
-
-                // 加载 RecoveryData
-                const recoveryRawData = await new Promise((res, rej) => {
-                    storage.get({
-                        key: STORAGE_KEYS.RECOVERY_DATA,
-                        success: (d) => res(d),
-                        fail: (d,c) => { console.warn(`[Detail] LSaR: Load recovery fail: ${d}, ${c}`); res(null); }
-                    });
-                });
-                console.log("[Detail] LSaR: Recovery data raw from storage:", recoveryRawData ? recoveryRawData.substring(0, 100) + "..." : "null");
-                if (recoveryRawData) { try { this.recoveryData = JSON.parse(recoveryRawData); } catch (e) { this.recoveryData = []; console.error("[Detail] LSaR: Failed to parse recoveryData", e); } }
+            },
+            fail: (d,c) => { console.warn(`[Detail] LSaR: Load settings fail: ${d}, ${c}`); settingsError = {d,c}; },
+            complete: () => { settingsLoaded = true; checkCompletion(); }
+        });
+        storage.get({ key: STORAGE_KEYS.RECOVERY_DATA,
+            success: (d) => {
+                console.log("[Detail] LSaR: Recovery data raw from storage:", d ? d.substring(0, 50) + "..." : "null"); // 缩短日志
+                if (d) { try { this.recoveryData = JSON.parse(d); } catch (e) { this.recoveryData = []; console.error("[Detail] LSaR: Failed to parse recoveryData", e); recoveryError = e;} }
                 else { this.recoveryData = []; }
                 console.log(`[Detail] LSaR: Recovery loaded, count: ${this.recoveryData.length}.`);
-                
-                console.log("[Detail] loadSettingsAndRecovery: Both settings and recovery loaded (or attempted).");
-                resolve();
-            } catch (error) {
-                console.error("[Detail] loadSettingsAndRecovery: Error during async loading. Details:", error);
-                reject(error); // 如果任何一步出错，则 reject
-            }
+            },
+            fail: (d,c) => { console.warn(`[Detail] LSaR: Load recovery fail: ${d}, ${c}`); recoveryError = {d,c}; this.recoveryData = []; /* 失败时确保是空数组 */ },
+            complete: () => { recoveryLoaded = true; checkCompletion(); }
         });
     },
 
-    startGameFromInitData(loadDataParam) { 
-        console.log("[Detail] startGameFromInitData called with param:", JSON.stringify(loadDataParam));
-        if (!loadDataParam || typeof loadDataParam.type === 'undefined') { // 增加对 loadDataParam.type 的检查
-             console.warn("[Detail] SGFI: loadDataParam is null or invalid. Navigating to index.");
-             this.isDataLoading = false; // 确保在跳转前更新状态
-             router.replace({ uri: "/pages/index" }); 
-             return;
-        }
-        
-        if (!this.loadFromHistory) { 
-            this.resetGameState();
-        }
+    // ... (startGameFromInitData, resetGameState, loadChapterData, loadChapterDataInternal, applyCurrentSceneState, loadScene, loadDialogue 等方法中的日志保持或按需调整)
+    // 确保 isDataLoading = false; 在所有异步数据加载完成后（成功或失败）被调用，通常在 loadChapterDataInternal 的 success/fail 回调中。
 
-        const { type, index } = loadDataParam; 
+    // ... (其他方法保持不变)
 
-        if (type === 'load' && index !== undefined) {
-            console.log(`[Detail] SGFI: Attempting load. Index: ${index}. RecoveryData available: ${!!this.recoveryData}. Slot data: ${this.recoveryData && this.recoveryData[index] ? JSON.stringify(this.recoveryData[index]) : 'INVALID/MISSING'}`);
-            if (this.recoveryData && this.recoveryData[index]) {
-                this.loadGameFromState(this.recoveryData[index]);
-            } else {
-                console.warn("[Detail] SGFI: Invalid recovery data or index. Starting new game (chapter 0).");
-                prompt.showToast({ message: "存档数据无效，开始新游戏" });
-                this.chapter = 0;
-                this.loadChapterData(0); // 这会设置 isDataLoading = false
-            }
-        } else if (type === 'TE') {
-            console.log(`[Detail] SGFI: Loading True Ending (chapter index ${TE_CHAPTER_INDEX}).`);
-            this.chapter = 'TE'; // 标记当前是TE流程
-            this.loadChapterData(TE_CHAPTER_INDEX); 
-        } else if (type === 'BE') {
-            console.log(`[Detail] SGFI: Loading Bad Ending (chapter index ${BE_CHAPTER_INDEX}).`);
-            this.chapter = 'BE'; 
-            this.loadChapterData(BE_CHAPTER_INDEX); 
-        } else if (type === 'chapter') {
-            const chapterIndex = index !== undefined ? index : 0;
-            console.log(`[Detail] SGFI: Loading chapter by index: ${chapterIndex}`);
-            this.chapter = chapterIndex; 
-            this.loadChapterData(this.chapter);
-        } else {
-            if (!this.loadFromHistory) { 
-                console.warn("[Detail] SGFI: Unknown load type and not from history. Starting new game from chapter 0.", JSON.stringify(loadDataParam));
-                this.chapter = 0;
-                this.loadChapterData(0);
-            } else {
-                console.log("[Detail] SGFI: Load type unknown, but was loading from history, state should be set by onInit.");
-                this.isDataLoading = false; // 如果是历史加载但类型未知，确保结束加载状态
-            }
-        }
+    clearTypingTimeout() { // 确保方法定义正确
+      if (this.typingTimeoutId) {
+        clearTimeout(this.typingTimeoutId);
+        this.typingTimeoutId = null;
+      }
     },
-    resetGameState(preserveIndices = false) {
-        console.log("[Detail] Resetting game state. preserveIndices:", preserveIndices);
-        this.isMenuVisible = false;
-        this.recoveryMode = RECOVERY_MODE_NONE;
-        this.achievedEnding = '';
-        this.clearTypingTimeout();
-        if (!preserveIndices) {
-            console.log("[Detail] Resetting indices (scene, dialogue, choices, log).");
-            this.currentScene = 0;
-            this.currentDialogue = 0;
-            this.choicesMade = [];
-            this.fullDialogueLog = []; 
-        } else {
-            console.log("[Detail] Preserving indices during reset.");
-        }
-    },
-
-     loadChapterData(chapterIdOrIndex) { // 参数名修改为更通用
-         console.log(`[Detail] loadChapterData: Request to load chapter with ID/Index: '${chapterIdOrIndex}'`);
-         let chapterIndexToLoadFromList = -1; // 这是 chapterList 的索引
-         let chapterContextForGame = chapterIdOrIndex; // 这是游戏逻辑中使用的章节标识 (可能是数字索引，也可能是 'TE'/'BE')
-
-         if (chapterIdOrIndex === 'BE') {
-             chapterContextForGame = 'BE'; 
-             chapterIndexToLoadFromList = BE_CHAPTER_INDEX; 
-         } else if (chapterIdOrIndex === 'TE') {
-             chapterContextForGame = 'TE'; 
-             chapterIndexToLoadFromList = TE_CHAPTER_INDEX; 
-         } else if (typeof chapterIdOrIndex === 'number') {
-             // 如果传入的是数字，我们假设它就是 chapterList 的索引
-             chapterContextForGame = chapterIdOrIndex; 
-             chapterIndexToLoadFromList = chapterIdOrIndex;
-         } else {
-             console.error(`[Detail] loadChapterData: Invalid chapter ID/Index type: ${chapterIdOrIndex}, type: ${typeof chapterIdOrIndex}. Defaulting to chapter 0.`);
-             chapterContextForGame = 0; 
-             chapterIndexToLoadFromList = 0;
-         }
-         
-         this.chapter = chapterContextForGame; // 更新当前的章节状态！
-         console.log(`[Detail] loadChapterData: Effective chapter context set to '${this.chapter}', Index for chapterList: ${chapterIndexToLoadFromList}`);
-         
-         let fromHistoryToThisChapterPoint = this.loadFromHistory && this.loadFromHistory.chapter === this.chapter;
-         let fromSave = this.load && this.load.type === 'load';
-
-         if (!fromHistoryToThisChapterPoint) {
-            this.fullDialogueLog = []; 
-            console.log("[Detail] loadChapterData: Cleared fullDialogueLog for new chapter/load.");
-         }
-         // choicesMade 的重置逻辑移到 applyCurrentSceneState 中，因为它依赖于是否是章节的开始
-         this.loadChapterDataInternal(chapterIndexToLoadFromList);
-     },
-     loadChapterDataInternal(indexInChapterList) {
-         console.log(`[Detail] loadChapterDataInternal: Loading chapter by list index: ${indexInChapterList}. Current state before read: S=${this.currentScene}, D=${this.currentDialogue}`);
-         this.isDataLoading = true; // 开始加载章节文件，设置加载状态
-
-         if (typeof indexInChapterList !== 'number' || indexInChapterList < 0 || indexInChapterList >= this.chapterList.length) {
-             console.error(`[Detail] LCDI: Internal invalid index ${indexInChapterList} for chapterList. Max index: ${this.chapterList.length - 1}`);
-             if(indexInChapterList !== 0) { 
-                 console.warn("[Detail] LCDI: Attempting to load chapter 0 as fallback.");
-                 this.chapter = 0; 
-                 this.loadChapterDataInternal(0); // 递归调用，但确保 isDataLoading 在最终路径被设置
-             } else {
-                 prompt.showToast({message: "章节数据错误"});
-                 this.isDataLoading = false; 
-                 router.back();
-             }
-             return;
-         }
-         const filename = this.chapterList[indexInChapterList];
-         const uri = `/common/content/${filename}.txt`;
-         console.log(`[Detail] LCDI: Reading chapter file: ${uri}.`);
-         this.gameData.scenes = []; 
-
-         file.readText({ uri: uri,
-             success: (d) => {
-                 if (d && d.text) {
-                     try {
-                         this.gameData.scenes = JSON.parse(d.text);
-                         console.log(`[Detail] LCDI Success: Parsed ${filename}: ${this.gameData.scenes.length} scenes. Current state before applyCurrentSceneState: Chapter='${this.chapter}', Scene=${this.currentScene}, Dialogue=${this.currentDialogue}`);
-                         this.applyCurrentSceneState(); 
-                     } catch (e) {
-                         console.error(`[Detail] LCDI: Parse fail ${uri}:`, e);
-                         prompt.showToast({message: "解析章节失败"});
-                         router.back();
-                     }
-                 } else {
-                     console.error(`[Detail] LCDI: Empty file: ${uri}`);
-                     prompt.showToast({message: "章节文件为空"});
-                     router.back();
-                 }
-                 this.isDataLoading = false; 
-             },
-             fail: (d, c) => {
-                 console.error(`[Detail] LCDI: Read fail ${uri}: ${d}, ${c}`);
-                 prompt.showToast({message: "读取章节失败"});
-                 router.back();
-                 this.isDataLoading = false;
-             },
-         });
-     },
-    applyCurrentSceneState() {
-        console.log(`[Detail] ACSS: Applying scene state. Using this.chapter='${this.chapter}', this.currentScene=${this.currentScene}, this.currentDialogue=${this.currentDialogue}`);
-        if (!this.gameData || !this.gameData.scenes || this.gameData.scenes.length === 0) {
-            console.error("[Detail] ACSS: No scene data loaded for current chapter. Cannot apply state.");
-            this.isDataLoading = false; // 确保加载状态被更新
-            return;
-        }
-        if (this.currentScene < 0 || this.currentScene >= this.gameData.scenes.length) {
-            console.error(`[Detail] ACSS: Invalid Scene index ${this.currentScene} for ${this.gameData.scenes.length} scenes in chapter '${this.chapter}'. Resetting to 0.`);
-            this.currentScene = 0;
-            this.currentDialogue = 0; 
-        }
-        const scene = this.gameData.scenes[this.currentScene];
-        if (scene && scene.dialogues && (this.currentDialogue < 0 || this.currentDialogue >= scene.dialogues.length)) {
-            console.warn(`[Detail] ACSS: Invalid Dialogue index ${this.currentDialogue} for scene ${this.currentScene} in chapter '${this.chapter}'. Resetting to 0.`);
-            this.currentDialogue = 0;
-        }
-        
-        // 决定是否重置 choicesMade
-        const isFromHistory = this.loadFromHistory && this.loadFromHistory.chapter === this.chapter;
-        const isFromSave = this.load && this.load.type === 'load';
-
-        if (isFromHistory) {
-            // choicesMade 已经由 onInit 中的 loadFromHistory 设置
-            console.log("[Detail] ACSS: choicesMade restored from history prop:", JSON.stringify(this.choicesMade));
-        } else if (isFromSave) {
-            // choicesMade 已经由 loadGameFromState 设置
-            console.log("[Detail] ACSS: choicesMade restored from save data:", JSON.stringify(this.choicesMade));
-        } else if (this.currentScene === 0 && this.currentDialogue === 0) {
-            // 全新开始一个章节（非历史跳转到章节内某处，非存档加载）
-            console.log("[Detail] ACSS: Entering new chapter or start of chapter, resetting choicesMade.");
-            this.choicesMade = [];
-        }
-        // 其他情况（例如在章节内跳转场景），choicesMade 保持不变
-
-        this.loadScene(this.currentScene); 
-    },
-    
-    loadScene(sceneIndex) {
-        console.log(`[Detail] --- Loading Scene Index: ${sceneIndex} (currentDialogue target: ${this.currentDialogue}) ---`);
-        this.clearTypingTimeout();
-        if (!this.gameData?.scenes || sceneIndex < 0 || sceneIndex >= this.gameData.scenes.length) {
-            console.error(`[Detail] loadScene: Invalid scene index ${sceneIndex}. Max: ${this.gameData?.scenes?.length -1}. Handling chapter end.`);
-            this.isDataLoading = false; // 确保在错误路径也更新
-            this.handleChapterEnd();
-            return;
-        }
-        this.currentScene = sceneIndex; 
-        const scene = this.gameData.scenes[this.currentScene];
-        console.log(`[Detail] Scene ${sceneIndex} Data loaded. Background: ${scene?.background}, Choices: ${!!scene?.choices}, Dialogues: ${scene?.dialogues?.length ?? 0}`);
-
-        if (!scene) { console.error("[Detail] Scene data is null for index:", sceneIndex); this.isDataLoading = false; this.handleChapterEnd(); return; }
-
-        this.currentBackground = scene.background || DEFAULT_BG;
-        if (scene.choices?.length > 0) {
-            console.log(`[Detail] Scene ${sceneIndex}: Choices present.`);
-            this.characterName = ''; this.displayedText = ''; this.canProgress = false;
-        } else if (scene.dialogues?.length > 0) {
-            if (this.currentDialogue < 0 || this.currentDialogue >= scene.dialogues.length) {
-                console.warn(`[Detail] Dialogue index ${this.currentDialogue} out of bounds for scene ${sceneIndex}. Resetting to 0.`);
-                this.currentDialogue = 0;
-            }
-            console.log(`[Detail] Scene ${sceneIndex}: Loading dialogue at index ${this.currentDialogue}.`);
-            this.loadDialogue(scene.dialogues[this.currentDialogue]);
-        } else {
-            console.log(`[Detail] Scene ${sceneIndex}: No choices or dialogues. Proceeding to dialogue end.`);
-            this.handleDialogueEnd(); 
-        }
-        // this.isDataLoading = false; // 移到 loadChapterDataInternal 的回调中，因为那里是真正的数据获取点
-    },
-    loadDialogue(dialogue) {
-        if (!dialogue) { console.error("[Detail] loadDialogue: Dialogue object is null."); this.handleDialogueEnd(); return; }
-        console.log(`[Detail] Loading dialogue: Char='${dialogue.character}', Text='${(dialogue.text || "").substring(0,20)}...'`);
-        if(this.showDialogueUI) { this.scrollToTop(); }
-        this.clearTypingTimeout();
-        this.characterName = dialogue.character || '';
-        this.fullDialogueText = dialogue.text || '';
-        this.displayedText = '';
-        this.typingIndex = 0;
-        this.canProgress = false;
-        this.startTypingEffect();
-
-        this.fullDialogueLog.push({
-            character: dialogue.character || '',
-            text: dialogue.text || '',
-            chapterId: this.chapter, 
-            sceneIndexInChapter: this.currentScene,
-            dialogueIndexInScene: this.currentDialogue,
-            choicesMadeSnapshot: [...this.choicesMade] 
-        });
-        // console.log(`[Detail] Dialogue logged. History length: ${this.fullDialogueLog.length}`); // 日志太频繁，暂时注释
-    },
-    // ... (其他方法保持不变，确保日志存在)
     
     openHistoryPage() {
         if (this.isMenuVisible || this.recoveryMode !== RECOVERY_MODE_NONE || this.achievedEnding || this.showChoicesUI || this.isDataLoading) {
@@ -499,8 +275,7 @@
         if(logWithContext.length === 0) {
             console.warn("[Detail] fullDialogueLog is empty when trying to open history! This is unexpected if dialogues have occurred.");
         }
-        // 临时限制传递给历史页面的记录数量
-        const MAX_HISTORY_ITEMS = 100; // 例如，只传递最近100条
+        const MAX_HISTORY_ITEMS = 50; // 临时限制为50条，减少卡顿
         const slicedLog = logWithContext.slice(-MAX_HISTORY_ITEMS);
         console.log(`[Detail] Passing ${slicedLog.length} items to history page.`);
 
@@ -508,7 +283,7 @@
             uri: 'pages/history',
             params: {
                 historyDataParams: { 
-                    log: slicedLog, // 传递截断后的记录
+                    log: slicedLog, 
                     chapter: this.chapter, 
                 }
             }

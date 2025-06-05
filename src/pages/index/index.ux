@@ -115,15 +115,14 @@
          complete: () => {} });
      },
     startGame() {
-      console.log("[Index] startGame clicked. Navigating to detail with no specific load params.");
-      // 点击 START 时，不传递任何 load 参数，detail 页面会默认从 chapter 0 开始
-      router.push({ uri: 'pages/detail' }); 
+      console.log("[Index] startGame clicked. Navigating to detail with NO 'load' param.");
+      router.push({ uri: 'pages/detail' }); // 点击 START 时，不传递 load 参数
       prompt.showToast({ message: "加载剧情中..." });
     },
     loadGame(indexOrType) {
         let loadParam;
         console.log(`[Index] loadGame called with: ${indexOrType}`);
-         if (typeof indexOrType === 'number') { // 加载存档
+         if (typeof indexOrType === 'number') { 
              if (indexOrType >= 0 && indexOrType < this.recoveryData.length) {
                  loadParam = { type: 'load', index: indexOrType };
                  prompt.showToast({ message: `读取存档 ${indexOrType + 1}...` });
@@ -131,11 +130,11 @@
                  prompt.showToast({ message: "无效存档" }); return;
              }
          }
-         else if (indexOrType === 'TE') { // 加载 True End
+         else if (indexOrType === 'TE') { 
              loadParam = { type: 'TE' }; 
              prompt.showToast({ message: "加载 True End 路线..." });
          }
-         else { prompt.showToast({ message: "无效加载类型" }); return; } // 未知类型
+         else { prompt.showToast({ message: "无效加载类型" }); return; } 
 
          this.hideLoadOverlay();
          console.log("[Index] Navigating to detail with loadParam:", JSON.stringify(loadParam));
