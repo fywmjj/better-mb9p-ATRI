@@ -151,9 +151,9 @@
         console.log(`[Detail] ONINIT START. Prop 'load' received: ${JSON.stringify(this.load)}`);
         console.log(`[Detail] ONINIT START. Prop 'loadFromHistory' received: ${JSON.stringify(this.loadFromHistory)}`);
 
-        // 定义一个函数来处理后续的游戏启动逻辑，这个函数将在 loadSettingsAndRecovery 成功后被调用
+        // 修复：确保 proceedWithGameLoad 和 handleLoadError 在调用时 this 指向组件实例
         const proceedWithGameLoad = () => {
-            console.log("[Detail] ONINIT: proceedWithGameLoad called.");
+            console.log("[Detail] ONINIT: proceedWithGameLoad called. 'this' context check:", typeof this.startGameFromInitData); // 检查 this
             if (this.loadFromHistory && typeof this.loadFromHistory === 'object') {
                 console.log("[Detail] ONINIT: Processing 'loadFromHistory'. Data:", JSON.stringify(this.loadFromHistory));
                 const { chapter, scene, dialogue, choicesMade } = this.loadFromHistory;
@@ -174,9 +174,8 @@
             }
         };
 
-        // 定义加载失败的处理
         const handleLoadError = (error) => {
-            console.error("[Detail] ONINIT: Critical error during loadSettingsAndRecovery. Error:", JSON.stringify(error)); // 打印错误对象
+            console.error("[Detail] ONINIT: Critical error during loadSettingsAndRecovery. Error:", JSON.stringify(error)); 
             this.isDataLoading = false; 
             prompt.showToast({message: "初始化存储失败，请重试"});
             setTimeout(() => {
@@ -184,8 +183,8 @@
             }, 1500);
         };
         
-        // 调用 loadSettingsAndRecovery，并传入回调
-        this.loadSettingsAndRecovery(proceedWithGameLoad, handleLoadError);
+        // 使用 .bind(this) 来确保回调函数中的 this 指向正确
+        this.loadSettingsAndRecovery(proceedWithGameLoad.bind(this), handleLoadError.bind(this));
     },
     onShow() {
       console.log("[Detail] onShow triggered. Reloading settings.");
@@ -218,8 +217,8 @@
         let recoveryLoaded = false;
         let settingsError = null;
         let recoveryError = null;
-        let settingsData = null; // 用于存储 settings 的原始数据
-        let recoveryRawData = null; // 用于存储 recovery 的原始数据
+        let settingsData = null; 
+        let recoveryRawData = null; 
 
         const tryParseAndSetSettings = () => {
             if (settingsData) {
@@ -228,11 +227,11 @@
                     this.settings = { ...DEFAULT_SETTINGS_DETAIL, ...s };
                 } catch (e) {
                     console.error("[Detail] Parse settings in LSaR failed", e);
-                    settingsError = e; // 记录解析错误
-                    this.settings = { ...DEFAULT_SETTINGS_DETAIL }; // 使用默认值
+                    settingsError = e; 
+                    this.settings = { ...DEFAULT_SETTINGS_DETAIL }; 
                 }
-            } else { // 如果 settingsData 为 null (例如读取失败)
-                this.settings = { ...DEFAULT_SETTINGS_DETAIL }; // 使用默认值
+            } else { 
+                this.settings = { ...DEFAULT_SETTINGS_DETAIL }; 
             }
             console.log("[Detail] LSaR: Settings processed:", JSON.stringify(this.settings));
         };
@@ -245,7 +244,7 @@
                 } catch (e) {
                     this.recoveryData = [];
                     console.error("[Detail] LSaR: Failed to parse recoveryData", e);
-                    recoveryError = e; // 记录解析错误
+                    recoveryError = e; 
                 }
             } else {
                 this.recoveryData = [];
@@ -253,50 +252,42 @@
             console.log(`[Detail] LSaR: Recovery processed, count: ${this.recoveryData.length}.`);
         };
 
-
         const checkCompletion = () => {
             if (settingsLoaded && recoveryLoaded) {
-                // 先处理数据解析和赋值
                 tryParseAndSetSettings();
                 tryParseAndSetRecovery();
 
-                // 然后再判断是否有错误并调用回调
                 if (settingsError || recoveryError) {
                     console.error("[Detail] LSaR: Errors occurred during loading or parsing.", {settingsError, recoveryError});
-                    if (errorCallback && typeof errorCallback === 'function') { // 确保 errorCallback 是函数
+                    if (errorCallback && typeof errorCallback === 'function') { 
                         errorCallback({settingsError, recoveryError});
                     } else {
                         console.error("[Detail] LSaR: errorCallback is not a function or not provided.");
                     }
                 } else {
                     console.log("[Detail] LSaR: Both settings and recovery processed successfully.");
-                    if (successCallback && typeof successCallback === 'function') { // 确保 successCallback 是函数
+                    if (successCallback && typeof successCallback === 'function') { 
                         successCallback();
                     } else {
-                         console.error("[Detail] LSaR: successCallback is not a function or not provided.");
+                         console.error("[Detail] LSaR: successCallback is not a function or not provided. Type:", typeof successCallback);
+                         // 如果 successCallback 不是函数，这是一个严重的问题，需要排查 onInit 的调用
                     }
                 }
             }
         };
 
         storage.get({ key: STORAGE_KEYS.SETTINGS,
-            success: (d) => {
-                settingsData = d; // 先保存原始数据
-            },
+            success: (d) => { settingsData = d; },
             fail: (d,c) => { console.warn(`[Detail] LSaR: Load settings fail: ${d}, ${c}`); settingsError = {d,c}; },
             complete: () => { settingsLoaded = true; checkCompletion(); }
         });
         storage.get({ key: STORAGE_KEYS.RECOVERY_DATA,
-            success: (d) => {
-                recoveryRawData = d; // 先保存原始数据
-            },
+            success: (d) => { recoveryRawData = d; },
             fail: (d,c) => { console.warn(`[Detail] LSaR: Load recovery fail: ${d}, ${c}`); recoveryError = {d,c}; },
             complete: () => { recoveryLoaded = true; checkCompletion(); }
         });
     },
-
-    // ... (startGameFromInitData, resetGameState, loadChapterData, loadChapterDataInternal, applyCurrentSceneState, loadScene, loadDialogue 等方法中的日志保持或按需调整)
-    // 确保 isDataLoading = false; 在所有异步数据加载完成后（成功或失败）被调用，通常在 loadChapterDataInternal 的 success/fail 回调中。
+    // ... (startGameFromInitData 和其他方法保持不变，但内部的 this.method() 调用应该是安全的)
 
     clearTypingTimeout() { 
       if (this.typingTimeoutId) {
