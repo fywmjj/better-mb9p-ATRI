@@ -1,9 +1,10 @@
 {
   "package": "io.github.fywmjj.ATRI",
   "name": "ATRI",
-  "versionName": "2.2.0",
-  "versionCode": 1748785760,
-  "minPlatformVersion": 1000,
+  "versionName": "2.2.1+patch250605",
+  "versionCode": 1749385660,
+  "minPlatformVersion": 1200,
+  "minAPILevel": 2,
   "icon": "/common/logo.png",
   "deviceTypeList": [
     "watch"

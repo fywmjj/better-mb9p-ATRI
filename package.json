@@ -1,6 +1,6 @@
 {
   "name": "ATRI",
-  "version": "2.2.0",
+  "version": "2.2.1+patch250605",
   "description": "ATRI -My Dear Moments- 视觉小说移植 (小米手环 9 Pro 版)",
   "private": true,
   "author": "Yaowen Fan <maoxian666@outlook.com>",
@@ -51,7 +51,7 @@
   },
   "devDependencies": {
    
-    "aiot-toolkit": "^2.0.3",
+    "aiot-toolkit": "^2.0.4",
     "@aiot-toolkit/velasim": "^0.1.26",
     "@aiot-toolkit/jsc": "^1.0.0",
     "ux-types": "^0.1.1",

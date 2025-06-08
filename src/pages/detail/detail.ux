@@ -280,19 +280,17 @@
     },
 
     startGameFromInitData() {
-        console.log("[Detail] startGameFromInitData:", JSON.stringify(this.loadOnInitData));
-        if (!this.loadOnInitData) {
-             console.warn("[Detail] loadOnInitData is null. Navigating to index.");
-             router.replace({ uri: "/pages/index" }); // 避免卡死，返回首页
-             return;
-        }
-        // 如果不是从历史记录加载，才执行这里的 resetGameState
-        // 如果是从历史记录加载，resetGameState 已经在 onInit 中针对性调用过了
-        if (!this.loadFromHistory) {
-            this.resetGameState();
-        }
+        console.log("[Detail] startGameFromInitData called with param:", JSON.stringify(loadDataParam));
+    if (!loadDataParam) {
+         console.warn("[Detail] SGFI: loadDataParam is null. Navigating to index.");
+         router.replace({ uri: "/pages/index" });
+         return;
+    }
+    if (!this.loadFromHistory) {
+        this.resetGameState();
+    }
 
-        const { type, index } = this.loadOnInitData;
+    const { type, index } = loadDataParam;
 
         if (type === 'load' && index !== undefined) {
             console.log("[Detail] Attempting to load from recoveryData, index:", index, "Data:", this.recoveryData ? JSON.stringify(this.recoveryData[index]) : "recoveryData is null");
@@ -306,7 +304,19 @@
             }
         } else if (type === 'TE') { this.chapter = 'TE'; this.loadChapterData(33); }
         else if (type === 'BE') { this.chapter = 'BE'; this.loadChapterData(32); }
-        else if (type === 'chapter') { const chapterIndex = index !== undefined ? index : 0; this.chapter = chapterIndex; this.loadChapterData(this.chapter); }
+        else if (type === 'chapter') {
+          const chapterIndex = index !== undefined ? index : 0;
+        console.log(`[Detail] SGFI: Loading chapter by index: ${chapterIndex}`);
+        // 根据索引判断是否为特殊结局
+        if (chapterIndex === 33) {
+            this.chapter = 'TE';  // True End
+        } else if (chapterIndex === 32) {
+            this.chapter = 'BE';  // Bad End
+        } else {
+            this.chapter = chapterIndex;
+        }
+        this.loadChapterData(chapterIndex);
+        }
         else {
             // 如果 loadOnInitData 类型未知，并且不是从历史记录加载，则从头开始
             if (!this.loadFromHistory) {

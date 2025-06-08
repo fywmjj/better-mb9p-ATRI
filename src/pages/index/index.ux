@@ -135,20 +135,33 @@
       router.push({ uri: 'pages/detail' }); prompt.showToast({ message: "加载游戏中..." });
     },
     loadGame(indexOrType) {
-        let loadParam;
-         if (typeof indexOrType === 'number') {
-             if (indexOrType >= 0 && indexOrType < this.recoveryData.length) {
-                 loadParam = { type: 'load', index: indexOrType };
-                 prompt.showToast({ message: `读取存档 ${indexOrType + 1}...` });
-             } else {
-                 prompt.showToast({ message: "无效存档" }); return;
-             }
-         }
-         else if (indexOrType === 'TE') { loadParam = { type: 'TE' }; prompt.showToast({ message: "加载路线..." }); }
-         else { prompt.showToast({ message: "无效类型" }); return; }
-         this.hideLoadOverlay();
-         router.push({ uri: `pages/detail`, params: { load: loadParam } });
-    },
+    let loadParam;
+    if (typeof indexOrType === 'number') {
+        if (indexOrType >= 0 && indexOrType < this.recoveryData.length) {
+            loadParam = { type: 'load', index: indexOrType };
+            prompt.showToast({ message: `读取存档 ${indexOrType + 1}...` });
+        } else {
+            prompt.showToast({ message: "无效存档" }); return;
+        }
+    }
+    // 修复 TE 和 BE 的加载
+    else if (indexOrType === 'TE') { 
+        // 这里改成 type: 'chapter', index: 33 确保加载 b701.txt
+        loadParam = { type: 'chapter', index: 33 }; 
+        prompt.showToast({ message: "加载 True End..." }); 
+    }
+    else if (indexOrType === 'BE') {
+        // 添加 BE 的处理逻辑，确保加载 b601.txt
+        loadParam = { type: 'chapter', index: 32 };
+        prompt.showToast({ message: "加载 Bad End..." });
+    }
+    else { 
+        prompt.showToast({ message: "无效类型" }); 
+        return; 
+    }
+    this.hideLoadOverlay();
+    router.push({ uri: `pages/detail`, params: { load: loadParam } });
+},
     exitApp() { try { this.$app.exit(); } catch(e) { prompt.showToast({ message: "无法退出" }); } },
     showLoadOverlay() { if (this.hasSaveData) { this.isLoadOverlayVisible = true; } else { prompt.showToast({message: "没有存档"}); } },
     hideLoadOverlay() { this.isLoadOverlayVisible = false; },

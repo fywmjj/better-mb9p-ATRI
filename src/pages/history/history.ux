@@ -1,28 +1,26 @@
 <template>
   <div class="history-page-container">
-    <!-- 顶部背景和标题 -->
-    <div class="header-background"></div>
-    <text class="real-time-clock">{{ currentTime }}</text>
-    <text class="history-title">对话回顾</text>
-
-    <!-- 返回按钮 -->
-    <image class="back-button" src="/common/gui/backButton.png" @click="goBack"></image>
+    <!-- 顶部区域 -->
+    <div class="header-section">
+      <image class="back-button" src="/common/gui/backButton.png" @click="goBack"></image>
+      <div class="header-content">
+        <text class="real-time-clock">{{ currentTime }}</text>
+        <text class="history-title">对话回顾</text>
+      </div>
+    </div>
 
     <!-- 对话列表 -->
     <scroll class="history-list-scroll" scroll-y="true" bounces="true">
       <div class="history-list-item" for="{{ (index, item) in dialogueHistory }}" @click="jumpToDialogue(item)" @longpress="saveDialogueAsRecovery(item)">
-        <!-- 角色图片区域 -->
         <div class="character-image-container">
           <image class="character-image" src="{{ getCharacterImage(item.character) }}" if="{{ getCharacterImage(item.character) }}"></image>
         </div>
-        <!-- 对话内容区域 -->
         <div class="dialogue-content-container">
-          <text class="character-name">{{ item.character || '旁白' }}</text>
-          <text class="dialogue-text">{{ item.text }}</text>
+          <text class="character-name-text">{{ item.character || '旁白' }}</text>
+          <text class="dialogue-text-content">{{ item.text }}</text>
         </div>
       </div>
       <div class="list-empty-placeholder" if="{{ !dialogueHistory || dialogueHistory.length === 0 }}">
-          <!-- 修改：给 text 添加类名 -->
           <text class="list-empty-text">还没有对话记录哦~</text>
       </div>
     </scroll>
@@ -33,89 +31,91 @@
   .history-page-container {
     width: 336px;
     height: 480px;
-    background-color: #222222; 
+    background-color: #333333;
     display: flex;
     flex-direction: column;
-    position: relative;
   }
 
-  .header-background {
-    position: absolute;
-    left: 0;
-    top: 0;
+  /* 顶部区域使用 Flexbox 布局 */
+  .header-section {
     width: 100%;
     height: 80px;
-    background-color: rgba(0, 0, 0, 0.4); 
-    z-index: 1;
-  }
-
-  .real-time-clock {
-    position: absolute;
-    left: 77px;
-    top: 7px;
-    width: 182px;
-    height: 32px;
-    font-size: 24px;
-    font-weight: 600;
-    color: rgba(255, 255, 255, 0.7); 
-    text-align: center;
-    line-height: 32px;
-    z-index: 2;
-  }
-
-  .history-title {
-    position: absolute;
-    left: 77px;
-    top: 35px;
-    width: 182px;
-    height: 45px;
-    font-size: 32px;
-    font-weight: 500;
-    color: rgba(255, 255, 255, 1);
-    text-align: center;
-    line-height: 45px;
-    z-index: 2;
+    background-color: rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    padding: 6px;
+    flex-shrink: 0; /* 防止被压缩 */
   }
 
   .back-button {
-    position: absolute;
-    left: 6px;
-    top: 6px;
     width: 72px;
     height: 72px;
-    z-index: 3;
+    flex-shrink: 0; /* 按钮大小固定不变 */
   }
 
+  /* 头部内容区域，包含时钟和标题 */
+  .header-content {
+    flex: 1; /* 占据剩余空间 */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    margin-left: -6px; /* 稍微向左偏移，视觉居中 */
+  }
+
+  .real-time-clock {
+    width: 182px;
+    height: 32px;
+    background-color: rgba(255, 255, 255, 0.6);
+    font-size: 24px;
+    font-weight: 500; /* 时钟字重调轻一点 */
+    color: rgba(255, 255, 255, 0.6);
+    text-align: center;
+    line-height: 32px;
+    margin-bottom: 3px; /* 时钟和标题之间的间距 */
+  }
+
+  .history-title {
+    width: 182px;
+    height: 45px;
+    background-color: rgba(255, 255, 255, 1);
+    font-size: 32px;
+    font-weight: 600; /* 标题字重加粗 */
+    color: rgba(0, 0, 0, 0.85); /* 修复：白色背景上用深色文字 */
+    text-align: center;
+    line-height: 45px;
+  }
+
+  /* 滚动列表区域 */
   .history-list-scroll {
-    margin-top: 80px;
-    flex-grow: 1;
+    flex: 1; /* 占据剩余的所有空间 */
     width: 100%;
-    padding: 10px 6px; 
+    padding: 10px 6px;
   }
 
   .history-list-item {
     width: 324px;
-    min-height: 112px; 
-    height: auto; 
-    border-radius: 12px; 
-    /* 修改：使用 background-color */
-    background-color: rgba(38, 38, 38, 0.9); 
-    margin-bottom: 12px; 
+    min-height: 112px;
+    height: auto;
+    border-radius: 18px;
+    background-color: rgba(38, 38, 38, 1);
+    margin-bottom: 12px;
     display: flex;
     flex-direction: row;
-    align-items: flex-start; 
+    align-items: flex-start;
     padding: 10px;
   }
 
   .character-image-container {
-    width: 70px; 
-    min-height: 92px; 
+    width: 80px;
+    min-height: 92px;
     display: flex;
     justify-content: center;
     align-items: flex-start;
     overflow: hidden;
     margin-right: 12px;
-    flex-shrink: 0; 
+    flex-shrink: 0;
   }
 
   .character-image {
@@ -124,32 +124,34 @@
   }
 
   .dialogue-content-container {
-    flex-grow: 1;
+    flex: 1; /* 占据剩余空间 */
     display: flex;
     flex-direction: column;
-    justify-content: flex-start; 
+    justify-content: flex-start;
   }
 
-  .character-name {
-    height: auto; 
-    padding: 4px 8px; 
-    /* 修改：使用 background-color */
-    background-color: rgba(255, 255, 255, 0.15); 
-    border-radius: 4px;
-    font-size: 18px; 
-    font-weight: 600; 
-    line-height: 24px;
-    color: rgba(220, 220, 220, 1); 
+  .character-name-text {
+    height: auto;
+    background-color: rgba(255, 255, 255, 0.6);
+    font-size: 20px;
+    font-weight: 500;
+    line-height: 28px;
+    color: rgba(0,0,0,0.7); /* 浅色背景配深色文字 */
     text-align: left;
+    padding: 4px 8px;
+    border-radius: 4px;
     margin-bottom: 6px;
   }
 
-  .dialogue-text {
-    font-size: 20px; 
-    font-weight: 400;
-    line-height: 26px; 
-    color: rgba(255, 255, 255, 0.9); 
+  .dialogue-text-content {
+    background-color: rgba(255, 255, 255, 1);
+    font-size: 24px;
+    font-weight: 500;
+    line-height: 30px;
+    color: rgba(0,0,0,0.85);
     text-align: left;
+    padding: 6px 8px;
+    border-radius: 4px;
   }
 
   .list-empty-placeholder {
@@ -159,10 +161,10 @@
     justify-content: center;
     align-items: center;
   }
-  /* 修改：使用新的类名 */
+  
   .list-empty-text {
     font-size: 20px;
-    color: #777777; 
+    color: #777777;
   }
 </style>
 
@@ -179,36 +181,47 @@
     '凯瑟琳': '/common/character/img_catherine.png',
     '凛凛花': '/common/character/img_ririka.png',
   };
-
   const STORAGE_KEYS = { RECOVERY_DATA: 'recoveryData' };
 
   export default {
+    props: ['historyDataParams'],
     private: {
       dialogueHistory: [],
       currentTime: '',
       clockIntervalId: null,
-      currentChapterContext: null, 
+      currentChapterContext: null,
     },
     onInit() {
-      console.log("[History] onInit. Received params:", JSON.stringify(this.historyDataParams)); 
-      if (this.historyDataParams) {
-        this.dialogueHistory = this.historyDataParams.log || [];
-        this.currentChapterContext = this.historyDataParams.chapter;
+      console.log("[History] onInit. Received prop 'historyDataParams':", this.historyDataParams ? JSON.stringify(this.historyDataParams).substring(0, 200) + "..." : "undefined");
+
+      const paramsFromRouter = this.historyDataParams;
+
+      if (paramsFromRouter && paramsFromRouter.log && Array.isArray(paramsFromRouter.log)) {
+        this.dialogueHistory = paramsFromRouter.log;
+        this.currentChapterContext = paramsFromRouter.chapter;
         console.log("[History] Dialogue history loaded. Count:", this.dialogueHistory.length, "Chapter context:", this.currentChapterContext);
+        if(this.dialogueHistory.length === 0) {
+            console.warn("[History] historyDataParams.log was an empty array.");
+        }
       } else {
-        console.warn("[History] No historyDataParams passed.");
+        console.warn("[History] historyDataParams or historyDataParams.log is invalid or empty. Received prop:", JSON.stringify(this.historyDataParams));
+        this.dialogueHistory = [];
       }
+      // 初始化时钟显示
       this.updateTime();
+      // 每30秒更新一次时间，避免频繁刷新影响性能
       this.clockIntervalId = setInterval(this.updateTime.bind(this), 1000 * 30);
     },
     onDestroy() {
       console.log("[History] onDestroy");
+      // 清理定时器，防止内存泄漏
       if (this.clockIntervalId) {
         clearInterval(this.clockIntervalId);
         this.clockIntervalId = null;
       }
     },
     updateTime() {
+      // 格式化当前时间为 HH:MM 格式
       const now = new Date();
       const hours = now.getHours().toString().padStart(2, '0');
       const minutes = now.getMinutes().toString().padStart(2, '0');
@@ -219,10 +232,12 @@
       router.back();
     },
     getCharacterImage(characterName) {
+      // 根据角色名返回对应的头像图片路径
       return CHARACTER_IMAGES[characterName] || '';
     },
     jumpToDialogue(historyItem) {
-      if (!historyItem || historyItem.sceneIndexInChapter === undefined || historyItem.dialogueIndexInScene === undefined) {
+      // 跳转到指定的对话位置
+      if (!historyItem || historyItem.sceneIndexInChapter === undefined || historyItem.dialogueIndexInScene === undefined || historyItem.chapterId === undefined) {
         prompt.showToast({ message: "无法跳转，历史记录信息不完整" });
         console.error("[History] Invalid historyItem for jump:", JSON.stringify(historyItem));
         return;
@@ -235,24 +250,26 @@
             chapter: historyItem.chapterId,
             scene: historyItem.sceneIndexInChapter,
             dialogue: historyItem.dialogueIndexInScene,
+            choicesMade: historyItem.choicesMadeSnapshot || []
           }
         }
       });
     },
     saveDialogueAsRecovery(historyItem) {
-      if (!historyItem || historyItem.sceneIndexInChapter === undefined || historyItem.dialogueIndexInScene === undefined) {
+      // 长按保存当前对话点为存档
+      if (!historyItem || historyItem.sceneIndexInChapter === undefined || historyItem.dialogueIndexInScene === undefined || historyItem.chapterId === undefined) {
         prompt.showToast({ message: "无法存档，历史记录信息不完整" });
         console.error("[History] Invalid historyItem for save:", JSON.stringify(historyItem));
         return;
       }
 
       const recoveryState = {
-        chapter: historyItem.chapterId, 
+        chapter: historyItem.chapterId,
         currentScene: historyItem.sceneIndexInChapter,
         currentDialogue: historyItem.dialogueIndexInScene,
-        choicesMade: historyItem.choicesMadeSnapshot || [], 
+        choicesMade: historyItem.choicesMadeSnapshot || [],
         timestamp: new Date().toISOString(),
-        fromHistory: true
+        fromHistory: true // 标记这是从历史记录创建的存档
       };
 
       console.log("[History] Saving recovery from history:", JSON.stringify(recoveryState));
@@ -264,6 +281,7 @@
           if (data) {
             try { recoveryData = JSON.parse(data); } catch (e) { console.error("Error parsing recovery data:", e); }
           }
+          // 限制存档数量，避免占用过多存储空间
           if (recoveryData.length >= 10) {
             prompt.showToast({ message: '存档已满 (最多10个)' });
             return;
