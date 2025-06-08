@@ -1,8 +1,8 @@
 {
   "package": "io.github.fywmjj.ATRI",
   "name": "ATRI",
-  "versionName": "2.2.1+patch250605",
-  "versionCode": 1749385660,
+  "versionName": "2.2.2",
+  "versionCode": 1749389275,
   "minPlatformVersion": 1200,
   "minAPILevel": 2,
   "icon": "/common/logo.png",
