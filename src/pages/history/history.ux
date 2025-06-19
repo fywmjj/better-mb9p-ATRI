@@ -1,13 +1,12 @@
 <template>
   <div class="history-page-container">
-    <!-- 顶部区域 -->
-    <div class="header-section">
-      <image class="back-button" src="/common/gui/backButton.png" @click="goBack"></image>
-      <div class="header-content">
-        <text class="real-time-clock">{{ currentTime }}</text>
-        <text class="history-title">对话回顾</text>
-      </div>
-    </div>
+    <!-- 顶部背景和标题 -->
+    <div class="header-background"></div>
+    <text class="real-time-clock">{{ currentTime }}</text>
+    <text class="history-title">对话回顾</text>
+
+    <!-- 返回按钮 -->
+    <image class="back-button" src="/common/gui/backButton.png" @click="goBack"></image>
 
     <!-- 对话列表 -->
     <scroll class="history-list-scroll" scroll-y="true" bounces="true">
@@ -31,64 +30,70 @@
   .history-page-container {
     width: 336px;
     height: 480px;
-    background-color: #000000;
+    background-color: #000000; /* 纯黑色背景 */
     display: flex;
     flex-direction: column;
+    position: relative;
   }
-  
-  /* 头部区域使用 Flexbox 布局 */
-  .header-section {
+
+  .header-background {
+    position: absolute;
+    left: 0;
+    top: 0;
     width: 100%;
     height: 80px;
     background-color: #000000; /* 改为纯黑色背景 */
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    padding: 6px;
-    flex-shrink: 0;
+    z-index: 1;
+  }
+
+  /* 回到绝对定位 */
+  .real-time-clock {
+    position: absolute;
+    left: 77px;
+    top: 7px;
+    width: 182px;
+    height: 32px;
+    opacity: 1;
+    background-color: #000000; /* 纯黑色背景 */
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: 0px;
+    line-height: 32px;
+    color: #999999; /* 灰色文字 */
+    text-align: center;
+    z-index: 2;
+  }
+
+  .history-title {
+    position: absolute;
+    left: 77px;
+    top: 35px;
+    width: 182px;
+    height: 45px;
+    opacity: 1;
+    background-color: #000000; /* 纯黑色背景 */
+    font-size: 32px;
+    font-weight: 600;
+    letter-spacing: 0px;
+    line-height: 45px;
+    color: #FFFFFF; /* 纯白色文字 */
+    text-align: center;
+    z-index: 2;
   }
 
   .back-button {
+    position: absolute;
+    left: 6px;
+    top: 6px;
     width: 72px;
     height: 72px;
-    flex-shrink: 0; /* 按钮大小固定不变 */
+    opacity: 1;
+    z-index: 3;
   }
 
-  /* 头部内容区域，包含时钟和标题 */
-  .header-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-  }
-
-  .real-time-clock {
-  width: 182px;
-  height: 32px;
-  background-color: #000000; /* 改为纯黑色背景 */
-  font-size: 24px;
-  font-weight: 500;
-  color: #999999; /* 灰色文字 */
-  text-align: center;
-  line-height: 32px;
-  margin-bottom: 3px;
-}
-
-  .history-title {
-  width: 182px;
-  height: 45px;
-  background-color: #000000; /* 改为纯黑色背景 */
-  font-size: 32px;
-  font-weight: 600;
-  color: #FFFFFF; /* 纯白色文字 */
-  text-align: center;
-  line-height: 45px;
-} 
-
-  /* 滚动列表区域 */
   .history-list-scroll {
-    flex: 1; /* 占据剩余的所有空间 */
+    margin-top: 80px;
+    flex-grow: 1;
     width: 100%;
     padding: 10px 6px;
   }
@@ -97,6 +102,7 @@
     width: 324px;
     min-height: 112px;
     height: auto;
+    opacity: 1;
     border-radius: 18px;
     background-color: rgba(38, 38, 38, 1);
     margin-bottom: 12px;
@@ -123,7 +129,7 @@
   }
 
   .dialogue-content-container {
-    flex: 1; /* 占据剩余空间 */
+    flex-grow: 1;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
@@ -131,11 +137,13 @@
 
   .character-name-text {
     height: auto;
+    opacity: 1;
     background-color: rgba(255, 255, 255, 0.6);
     font-size: 20px;
     font-weight: 500;
+    letter-spacing: 0px;
     line-height: 28px;
-    color: rgba(0,0,0,0.7); /* 浅色背景配深色文字 */
+    color: rgba(0,0,0,0.7);
     text-align: left;
     padding: 4px 8px;
     border-radius: 4px;
@@ -143,9 +151,11 @@
   }
 
   .dialogue-text-content {
+    opacity: 1;
     background-color: rgba(255, 255, 255, 1);
     font-size: 24px;
     font-weight: 500;
+    letter-spacing: 0px;
     line-height: 30px;
     color: rgba(0,0,0,0.85);
     text-align: left;
@@ -160,7 +170,6 @@
     justify-content: center;
     align-items: center;
   }
-  
   .list-empty-text {
     font-size: 20px;
     color: #777777;
