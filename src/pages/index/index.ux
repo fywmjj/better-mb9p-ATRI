@@ -40,7 +40,6 @@
   .page-container { width: 336px; height: 480px; position: relative; background-color: #000000; overflow: hidden; }
   .bg-image { width: 100%; height: 100%; object-fit: cover; }
   .true-end-visual { position: absolute; top: 0; left: 0; width: 100%; height: auto; }
-
   .main-menu-button-container {
     position: absolute;
     left: 35px;
@@ -81,7 +80,7 @@
   import storage from '@system.storage';
   import prompt from '@system.prompt';
 
-  const STORAGE_KEYS = { RECOVERY_DATA: 'recoveryData', TIPS_SHOWN: 'tips', FIN_STATUS: 'fin' };
+  const STORAGE_KEYS = { RECOVERY_DATA: 'recoveryData', TIPS_SHOWN: 'tips', FIN_STATUS: 'fin', HISTORY_LOG: 'historyLog' };
   const TIPS_SEEN_FLAG = 61;
 
   export default {
@@ -95,16 +94,9 @@
         showTrueEndVisuals() { return this.finStatus && this.finStatus.HE === true; },
         hasSaveData() { return this.recoveryData && this.recoveryData.length > 0; },
         mainMenuTopOffset() {
-          // 修复：为两种情况定义不同的容器 top 值，以优化布局
-          const topWithTrueEnd = 195;    // 当 TRUE END 按钮显示时，按钮容器的 top 值 (视觉居中)
-          const topWithoutTrueEnd = 225; // 当 TRUE END 按钮不显示时，按钮容器的 top 值 (稍微向下，减少EXIT下方空隙)
-                                         // 这个值可以根据实际按钮数量和高度微调，目标是让EXIT按钮底部位置相对稳定
-
-          if (this.showTrueEndVisuals) {
-            return topWithTrueEnd;
-          } else {
-            return topWithoutTrueEnd;
-          }
+          const topWithTrueEnd = 195;
+          const topWithoutTrueEnd = 225;
+          return this.showTrueEndVisuals ? topWithTrueEnd : topWithoutTrueEnd;
         }
     },
     onInit() {
@@ -128,40 +120,61 @@
     }); },
      checkIfTipsNeeded() { storage.get({ key: STORAGE_KEYS.TIPS_SHOWN,
          success: (d) => { let flag = null; if (d) { try { flag = JSON.parse(d); } catch (e) {} } if (flag !== TIPS_SEEN_FLAG) { setTimeout(() => { this.isTipsOverlayVisible = true; }, 0); } else { this.isTipsOverlayVisible = false; } },
-         fail: (d,c) => { console.warn(`[Index] Check tips fail: ${d}, ${c}`); setTimeout(() => { this.isTipsOverlayVisible = true; }, 0); },
-         complete: () => {} });
+         fail: (d,c) => { console.warn(`[Index] Check tips fail: ${d}, ${c}`); setTimeout(() => { this.isTipsOverlayVisible = true; }, 0); }
+     });
      },
     startGame() {
-  // 只保留一个toast提示
-  prompt.showToast({ message: "加载游戏中..." });
-  router.push({ uri: 'pages/detail' }); 
-},
-
-loadGame(indexOrType) {
-    let loadParam;
-    if (typeof indexOrType === 'number') {
-        if (indexOrType >= 0 && indexOrType < this.recoveryData.length) {
-            loadParam = { type: 'load', index: indexOrType };
-            prompt.showToast({ message: `读取存档 ${indexOrType + 1}...` });
-        } else {
-            prompt.showToast({ message: "无效存档" }); return;
+      // 优化：只显示一个toast, 并且在跳转前清空历史记录
+      prompt.showToast({ message: "加载游戏中..." });
+      storage.set({
+        key: STORAGE_KEYS.HISTORY_LOG,
+        value: '[]', // 清空为-一个空的json数组字符串
+        success: () => {
+          router.push({ uri: 'pages/detail' });
+        },
+        fail: () => { // 即使清空失败，也继续游戏
+          router.push({ uri: 'pages/detail' });
         }
-    }
-    else if (indexOrType === 'TE') { 
-        loadParam = { type: 'TE' }; 
-        prompt.showToast({ message: "加载 True End..." }); 
-    }
-    else if (indexOrType === 'BE') {
-        loadParam = { type: 'BE' };
-        prompt.showToast({ message: "加载 Bad End..." });
-    }
-    else { 
-        prompt.showToast({ message: "无效类型" }); 
-        return; 
-    }
-    this.hideLoadOverlay();
-    router.push({ uri: `pages/detail`, params: { load: loadParam } });
-},
+      });
+    },
+    loadGame(indexOrType) {
+        let loadParam;
+        let toastMessage = '';
+
+         if (typeof indexOrType === 'number') {
+             if (indexOrType >= 0 && indexOrType < this.recoveryData.length) {
+                 loadParam = { type: 'load', index: indexOrType };
+                 toastMessage = `读取存档 ${indexOrType + 1}...`;
+             } else {
+                 prompt.showToast({ message: "无效存档" }); return;
+             }
+         }
+         else if (indexOrType === 'TE') {
+             loadParam = { type: 'TE' };
+             toastMessage = "加载 True End...";
+         }
+         else if (indexOrType === 'BE') {
+            loadParam = { type: 'BE' };
+            toastMessage = "加载 Bad End...";
+         }
+         else {
+             prompt.showToast({ message: "无效类型" }); return;
+         }
+
+         this.hideLoadOverlay();
+         prompt.showToast({ message: toastMessage });
+         // 优化：跳转前清空历史记录
+         storage.set({
+           key: STORAGE_KEYS.HISTORY_LOG,
+           value: '[]',
+           success: () => {
+             router.push({ uri: `pages/detail`, params: { load: loadParam } });
+           },
+           fail: () => { // 即使清空失败，也继续游戏
+             router.push({ uri: `pages/detail`, params: { load: loadParam } });
+           }
+         });
+    },
     exitApp() { try { this.$app.exit(); } catch(e) { prompt.showToast({ message: "无法退出" }); } },
     showLoadOverlay() { if (this.hasSaveData) { this.isLoadOverlayVisible = true; } else { prompt.showToast({message: "没有存档"}); } },
     hideLoadOverlay() { this.isLoadOverlayVisible = false; },
@@ -169,6 +182,6 @@ loadGame(indexOrType) {
         console.log("[Index] showSettingsOverlay called. Navigating to settings page.");
         router.push({ uri: 'pages/settings' });
     },
-    hideTipsOverlay() { this.isTipsOverlayVisible = false; storage.set({ key: STORAGE_KEYS.TIPS_SHOWN, value: JSON.stringify(TIPS_SEEN_FLAG), success: () => {}, fail: () => {}, complete: () => {} }); },
+    hideTipsOverlay() { this.isTipsOverlayVisible = false; storage.set({ key: STORAGE_KEYS.TIPS_SHOWN, value: JSON.stringify(TIPS_SEEN_FLAG) }); },
   }
 </script>
