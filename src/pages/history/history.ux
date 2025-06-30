@@ -30,7 +30,7 @@
   .history-page-container {
     width: 336px;
     height: 480px;
-    background-color: #000000; /* 纯黑色背景 */
+    background-color: #000000;
     display: flex;
     flex-direction: column;
     position: relative;
@@ -42,24 +42,21 @@
     top: 0;
     width: 100%;
     height: 80px;
-    background-color: #000000; /* 改为纯黑色背景 */
+    background-color: #000000;
     z-index: 1;
   }
 
-  /* 回到绝对定位 */
   .real-time-clock {
     position: absolute;
     left: 77px;
     top: 7px;
     width: 182px;
     height: 32px;
-    opacity: 1;
-    background-color: #000000; /* 纯黑色背景 */
+    background-color: #000000;
     font-size: 24px;
     font-weight: 500;
-    letter-spacing: 0px;
     line-height: 32px;
-    color: #999999; /* 灰色文字 */
+    color: #999999;
     text-align: center;
     z-index: 2;
   }
@@ -70,13 +67,11 @@
     top: 35px;
     width: 182px;
     height: 45px;
-    opacity: 1;
-    background-color: #000000; /* 纯黑色背景 */
+    background-color: #000000;
     font-size: 32px;
     font-weight: 600;
-    letter-spacing: 0px;
     line-height: 45px;
-    color: #FFFFFF; /* 纯白色文字 */
+    color: #FFFFFF;
     text-align: center;
     z-index: 2;
   }
@@ -87,7 +82,6 @@
     top: 6px;
     width: 72px;
     height: 72px;
-    opacity: 1;
     z-index: 3;
   }
 
@@ -102,7 +96,6 @@
     width: 324px;
     min-height: 112px;
     height: auto;
-    opacity: 1;
     border-radius: 18px;
     background-color: rgba(38, 38, 38, 1);
     margin-bottom: 12px;
@@ -137,11 +130,9 @@
 
   .character-name-text {
     height: auto;
-    opacity: 1;
     background-color: rgba(255, 255, 255, 0.6);
     font-size: 20px;
     font-weight: 500;
-    letter-spacing: 0px;
     line-height: 28px;
     color: rgba(0,0,0,0.7);
     text-align: left;
@@ -151,11 +142,9 @@
   }
 
   .dialogue-text-content {
-    opacity: 1;
     background-color: rgba(255, 255, 255, 1);
     font-size: 24px;
     font-weight: 500;
-    letter-spacing: 0px;
     line-height: 30px;
     color: rgba(0,0,0,0.85);
     text-align: left;
@@ -189,85 +178,89 @@
     '凯瑟琳': '/common/character/img_catherine.png',
     '凛凛花': '/common/character/img_ririka.png',
   };
-  const STORAGE_KEYS = { RECOVERY_DATA: 'recoveryData' };
+  const STORAGE_KEYS = { RECOVERY_DATA: 'recoveryData', HISTORY_LOG: 'historyLog' };
 
   export default {
-    props: ['historyDataParams'],
+    props: [], // 优化：不再接收props
     private: {
       dialogueHistory: [],
       currentTime: '',
       clockIntervalId: null,
-      currentChapterContext: null,
     },
     onInit() {
-      console.log("[History] onInit. Received prop 'historyDataParams':", this.historyDataParams ? JSON.stringify(this.historyDataParams).substring(0, 200) + "..." : "undefined");
+      console.log("[History] onInit. Reading history from storage.");
 
-      const paramsFromRouter = this.historyDataParams;
-
-      if (paramsFromRouter && paramsFromRouter.log && Array.isArray(paramsFromRouter.log)) {
-        this.dialogueHistory = paramsFromRouter.log;
-        this.currentChapterContext = paramsFromRouter.chapter;
-        console.log("[History] Dialogue history loaded. Count:", this.dialogueHistory.length, "Chapter context:", this.currentChapterContext);
-        if(this.dialogueHistory.length === 0) {
-            console.warn("[History] historyDataParams.log was an empty array.");
+      // 优化：直接从storage读取历史记录
+      storage.get({
+        key: STORAGE_KEYS.HISTORY_LOG,
+        success: (data) => {
+          if (data) {
+            try {
+              this.dialogueHistory = JSON.parse(data);
+              console.log(`[History] Loaded ${this.dialogueHistory.length} items from storage.`);
+            } catch (e) {
+              console.error("[History] Failed to parse history data from storage.", e);
+              this.dialogueHistory = [];
+            }
+          } else {
+            console.warn("[History] No history log found in storage.");
+            this.dialogueHistory = [];
+          }
+        },
+        fail: (data, code) => {
+          console.error(`[History] Failed to get history from storage. Code: ${code}, Data: ${data}`);
+          this.dialogueHistory = [];
         }
-      } else {
-        console.warn("[History] historyDataParams or historyDataParams.log is invalid or empty. Received prop:", JSON.stringify(this.historyDataParams));
-        this.dialogueHistory = [];
-      }
-      // 初始化时钟显示
+      });
+
       this.updateTime();
-      // 每30秒更新一次时间，避免频繁刷新影响性能
       this.clockIntervalId = setInterval(this.updateTime.bind(this), 1000 * 30);
     },
     onDestroy() {
-      console.log("[History] onDestroy");
-      // 清理定时器，防止内存泄漏
       if (this.clockIntervalId) {
         clearInterval(this.clockIntervalId);
         this.clockIntervalId = null;
       }
     },
     updateTime() {
-      // 格式化当前时间为 HH:MM 格式
       const now = new Date();
       const hours = now.getHours().toString().padStart(2, '0');
       const minutes = now.getMinutes().toString().padStart(2, '0');
       this.currentTime = `${hours}:${minutes}`;
     },
     goBack() {
-      console.log("[History] Go back clicked.");
       router.back();
     },
     getCharacterImage(characterName) {
-      // 根据角色名返回对应的头像图片路径
       return CHARACTER_IMAGES[characterName] || '';
     },
     jumpToDialogue(historyItem) {
-      // 跳转到指定的对话位置
       if (!historyItem || historyItem.sceneIndexInChapter === undefined || historyItem.dialogueIndexInScene === undefined || historyItem.chapterId === undefined) {
         prompt.showToast({ message: "无法跳转，历史记录信息不完整" });
-        console.error("[History] Invalid historyItem for jump:", JSON.stringify(historyItem));
         return;
       }
-      console.log(`[History] Jumping to dialogue: Chapter=${historyItem.chapterId}, Scene=${historyItem.sceneIndexInChapter}, Dialogue=${historyItem.dialogueIndexInScene}`);
-      router.replace({
-        uri: 'pages/detail',
-        params: {
-          loadFromHistory: {
-            chapter: historyItem.chapterId,
-            scene: historyItem.sceneIndexInChapter,
-            dialogue: historyItem.dialogueIndexInScene,
-            choicesMade: historyItem.choicesMadeSnapshot || []
-          }
+      // 从历史记录跳转时，需要清空当前的storage，否则会话会错乱
+      storage.set({
+        key: STORAGE_KEYS.HISTORY_LOG,
+        value: '[]',
+        success: () => {
+          router.replace({
+            uri: 'pages/detail',
+            params: {
+              loadFromHistory: {
+                chapter: historyItem.chapterId,
+                scene: historyItem.sceneIndexInChapter,
+                dialogue: historyItem.dialogueIndexInScene,
+                choicesMade: historyItem.choicesMadeSnapshot || []
+              }
+            }
+          });
         }
       });
     },
     saveDialogueAsRecovery(historyItem) {
-      // 长按保存当前对话点为存档
       if (!historyItem || historyItem.sceneIndexInChapter === undefined || historyItem.dialogueIndexInScene === undefined || historyItem.chapterId === undefined) {
         prompt.showToast({ message: "无法存档，历史记录信息不完整" });
-        console.error("[History] Invalid historyItem for save:", JSON.stringify(historyItem));
         return;
       }
 
@@ -277,19 +270,16 @@
         currentDialogue: historyItem.dialogueIndexInScene,
         choicesMade: historyItem.choicesMadeSnapshot || [],
         timestamp: new Date().toISOString(),
-        fromHistory: true // 标记这是从历史记录创建的存档
+        fromHistory: true
       };
-
-      console.log("[History] Saving recovery from history:", JSON.stringify(recoveryState));
 
       storage.get({
         key: STORAGE_KEYS.RECOVERY_DATA,
         success: (data) => {
           let recoveryData = [];
           if (data) {
-            try { recoveryData = JSON.parse(data); } catch (e) { console.error("Error parsing recovery data:", e); }
+            try { recoveryData = JSON.parse(data); } catch (e) {}
           }
-          // 限制存档数量，避免占用过多存储空间
           if (recoveryData.length >= 10) {
             prompt.showToast({ message: '存档已满 (最多10个)' });
             return;
@@ -303,13 +293,11 @@
             },
             fail: (d, c) => {
               prompt.showToast({ message: '保存失败' });
-              console.error(`Save recovery from history fail: ${d}, ${c}`);
             }
           });
         },
         fail: (d, c) => {
           prompt.showToast({ message: '读取存档列表失败' });
-          console.error(`Load recovery list fail: ${d}, ${c}`);
         }
       });
     }
