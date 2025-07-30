@@ -10,7 +10,8 @@
       <text class="text">{{ text }}</text>
     </div>
     <div class="choice-wrapper" show="{{ choice_visible }}">
-      <div class="choice-item" for="{{ choices }}" onclick="onChoice({{ $idx }})">
+      <!-- 这里之前绑定的方法写的有点问题，框架不支持，还好报错信息比较明显，不然又得找半天 -->
+      <div class="choice-item" for="{{ choices }}" onclick="onChoice($idx)">
         <text class="choice-text">{{ $item }}</text>
       </div>
     </div>
@@ -112,6 +113,7 @@
 
   export default {
     private: {
+      // 感觉这里的状态变量有点多，后面可以考虑用个状态机来管理，或者至少分组一下。
       lines: [],
       line_index: 0,
       bg_image: '/common/images/bg.png',
@@ -127,6 +129,7 @@
       choice_callbacks: [],
     },
     onInit() {
+      // onInit这里把函数都bind一遍，免得后面this指向出问题，算是标准操作了。
       this.continueDialog = this.continueDialog.bind(this)
       this.update = this.update.bind(this)
       this.onChoice = this.onChoice.bind(this)
@@ -205,6 +208,7 @@
       }
     },
     onChoice(index) {
+      // 玩家做出选择后，要把选项清空，不然会影响到后面的剧情分支。
       const uri = this.choice_callbacks[index]
       this.choice_visible = false
       this.choices = []
