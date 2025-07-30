@@ -1,187 +1,398 @@
 <template>
   <div class="page-container">
     <image class="bg-image" src="/common/images/bg.png"></image>
-    <image class="true-end-visual" src="/common/images/ATRI_TrueEnding.png" if="{{ showTrueEndVisuals }}"></image>
+    <image
+      class="true-end-visual"
+      src="/common/images/ATRI_TrueEnding.png"
+      if="{{ showTrueEndVisuals }}"
+    ></image>
 
     <div class="main-menu-button-container" style="top: {{ mainMenuTopOffset }}px;">
-      <text class="main-menu-button true-end-button" if="{{ showTrueEndVisuals }}" @click="loadGame('TE')">TRUE END</text>
+      <text
+        class="main-menu-button true-end-button"
+        if="{{ showTrueEndVisuals }}"
+        @click="loadGame('TE')"
+      >
+        TRUE END
+      </text>
       <text class="main-menu-button" @click="startGame()">START</text>
-      <text class="main-menu-button {{ hasSaveData ? '' : 'disabled' }}" @click="showLoadOverlay()">LOAD</text>
+      <text class="main-menu-button {{ hasSaveData ? '' : 'disabled' }}" @click="showLoadOverlay()">
+        LOAD
+      </text>
       <text class="main-menu-button" @click="showSettingsOverlay()">SYSTEM</text>
       <text class="main-menu-button" @click="exitApp()">EXIT</text>
     </div>
 
     <div class="overlay load-overlay" if="{{ isLoadOverlayVisible }}">
-       <scroll scroll-y="true" bounces="true" class="overlay-scroll">
-          <text class="overlay-title">点击读取存档</text>
-          <text class="save-slot-button" for="{{ (index, slot) in recoveryData }}" @click="loadGame(index)">存档 {{ index + 1 }}</text>
-           <text class="save-load-empty" if="{{ !hasSaveData }}">没有可用的存档</text>
-          <text class="close-button" @click="hideLoadOverlay">关闭</text>
-       </scroll>
+      <scroll scroll-y="true" bounces="true" class="overlay-scroll">
+        <text class="overlay-title">点击读取存档</text>
+        <text
+          class="save-slot-button"
+          for="{{ (index, slot) in recoveryData }}"
+          @click="loadGame(index)"
+        >
+          存档 {{ index + 1 }}
+        </text>
+        <text class="save-load-empty" if="{{ !hasSaveData }}">没有可用的存档</text>
+        <text class="close-button" @click="hideLoadOverlay">关闭</text>
+      </scroll>
     </div>
 
     <div class="overlay tips-overlay" if="{{ isTipsOverlayVisible }}">
-        <div class="tips-content">
-            <text class="tips-text title">提示与信息</text>
-            <text class="tips-text small">在"SYSTEM"中调整显示速度和文字大小。</text>
-            <text class="tips-text small">游戏中右滑进入菜单。</text>
-            <text class="tips-text warning">请勿反复点击START！耐心等待加载。</text>
-            <text class="tips-text separator"></text>
-            <text class="tips-text small">制作：@liuyuze61</text>
-            <text class="tips-text small">感谢：@Wxz226，@TLE</text>
-            <text class="tips-text separator"></text>
-            <text class="tips-text confirm-button" @click="hideTipsOverlay()">我知道了</text>
-        </div>
+      <div class="tips-content">
+        <text class="tips-text title">提示与信息</text>
+        <text class="tips-text small">在"SYSTEM"中调整显示速度和文字大小。</text>
+        <text class="tips-text small">游戏中右滑进入菜单。</text>
+        <text class="tips-text warning">请勿反复点击START！耐心等待加载。</text>
+        <text class="tips-text separator"></text>
+        <text class="tips-text small">制作：@liuyuze61</text>
+        <text class="tips-text small">感谢：@Wxz226，@TLE</text>
+        <text class="tips-text separator"></text>
+        <text class="tips-text confirm-button" @click="hideTipsOverlay()">我知道了</text>
+      </div>
     </div>
   </div>
 </template>
 
 <style>
-  .page-container { width: 336px; height: 480px; position: relative; background-color: #000000; overflow: hidden; }
-  .bg-image { width: 100%; height: 100%; object-fit: cover; }
-  .true-end-visual { position: absolute; top: 0; left: 0; width: 100%; height: auto; }
-  .main-menu-button-container {
-    position: absolute;
-    left: 35px;
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .main-menu-button {
-    font-size: 30px;
-    font-weight: bold;
-    color: #0A55BC;
-    padding: 3px 0;
-    margin-bottom: 12px;
-  }
-  .true-end-button { color: #FFD700; }
-  .main-menu-button.disabled { color: #aaaaaa; }
+.page-container {
+  width: 336px;
+  height: 480px;
+  position: relative;
+  background-color: #000000;
+  overflow: hidden;
+}
+.bg-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.true-end-visual {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+}
+.main-menu-button-container {
+  position: absolute;
+  left: 35px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.main-menu-button {
+  font-size: 30px;
+  font-weight: bold;
+  color: #0a55bc;
+  padding: 3px 0;
+  margin-bottom: 12px;
+}
+.true-end-button {
+  color: #ffd700;
+}
+.main-menu-button.disabled {
+  color: #aaaaaa;
+}
 
-  .overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(255, 255, 255, 0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
-  .load-overlay { padding: 20px; justify-content: flex-start; }
-  .overlay-scroll { width: 100%; flex-grow: 1; display: flex; flex-direction: column; align-items: center; }
-  .overlay-title { font-size: 22px; color: #333333; font-weight: bold; margin-bottom: 20px; margin-top: 10px; }
-  .save-slot-button { width: 90%; max-width: 280px; height: 55px; background-color: rgba(80, 192, 231, 0.8); color: #ffffff; font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 15px; display: flex; justify-content: center; align-items: center; border-radius: 8px; flex-shrink: 0; }
-  .save-load-empty { margin-top: 20px; font-size: 18px; color: #888888; }
-  .close-button { margin-top: auto; padding: 10px 20px; font-size: 20px; color: #007aff; }
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(255, 255, 255, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.load-overlay {
+  padding: 20px;
+  justify-content: flex-start;
+}
+.overlay-scroll {
+  width: 100%;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.overlay-title {
+  font-size: 22px;
+  color: #333333;
+  font-weight: bold;
+  margin-bottom: 20px;
+  margin-top: 10px;
+}
+.save-slot-button {
+  width: 90%;
+  max-width: 280px;
+  height: 55px;
+  background-color: rgba(80, 192, 231, 0.8);
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+.save-load-empty {
+  margin-top: 20px;
+  font-size: 18px;
+  color: #888888;
+}
+.close-button {
+  margin-top: auto;
+  padding: 10px 20px;
+  font-size: 20px;
+  color: #007aff;
+}
 
-  .tips-overlay { background-color: rgba(255, 255, 255, 0.98); padding: 20px; }
-  .tips-content { display: flex; flex-direction: column; align-items: center; text-align: center; max-width: 300px; }
-  .tips-text { font-size: 20px; color: #333333; margin-bottom: 12px; }
-  .tips-text.title { font-size: 24px; font-weight: bold; margin-bottom: 20px; color: #000000; }
-  .tips-text.small { font-size: 18px; color: #555555; }
-  .tips-text.warning { color: #DD2C00; font-weight: bold; }
-  .tips-text.separator { color: #cccccc; margin: 10px 0 20px 0; width: 80%; height: 1px; background-color: #cccccc;}
-  .confirm-button { font-size: 22px; color: #007aff; font-weight: bold; margin-top: 20px; padding: 10px; }
+.tips-overlay {
+  background-color: rgba(255, 255, 255, 0.98);
+  padding: 20px;
+}
+.tips-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-width: 300px;
+}
+.tips-text {
+  font-size: 20px;
+  color: #333333;
+  margin-bottom: 12px;
+}
+.tips-text.title {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 20px;
+  color: #000000;
+}
+.tips-text.small {
+  font-size: 18px;
+  color: #555555;
+}
+.tips-text.warning {
+  color: #dd2c00;
+  font-weight: bold;
+}
+.tips-text.separator {
+  color: #cccccc;
+  margin: 10px 0 20px 0;
+  width: 80%;
+  height: 1px;
+  background-color: #cccccc;
+}
+.confirm-button {
+  font-size: 22px;
+  color: #007aff;
+  font-weight: bold;
+  margin-top: 20px;
+  padding: 10px;
+}
 </style>
 
 <script>
-  import router from "@system.router";
-  import storage from '@system.storage';
-  import prompt from '@system.prompt';
+import router from '@system.router';
+import storage from '@system.storage';
+import prompt from '@system.prompt';
 
-  const STORAGE_KEYS = { RECOVERY_DATA: 'recoveryData', TIPS_SHOWN: 'tips', FIN_STATUS: 'fin', HISTORY_LOG: 'historyLog' };
-  const TIPS_SEEN_FLAG = 61;
+const STORAGE_KEYS = {
+  RECOVERY_DATA: 'recoveryData',
+  TIPS_SHOWN: 'tips',
+  FIN_STATUS: 'fin',
+  HISTORY_LOG: 'historyLog',
+};
+const TIPS_SEEN_FLAG = 61;
 
-  export default {
-    private: {
-      recoveryData: [],
-      finStatus: { HE: false, BE: false },
-      isLoadOverlayVisible: false,
-      isTipsOverlayVisible: false,
+export default {
+  private: {
+    recoveryData: [],
+    finStatus: { HE: false, BE: false },
+    isLoadOverlayVisible: false,
+    isTipsOverlayVisible: false,
+  },
+  computed: {
+    showTrueEndVisuals() {
+      return this.finStatus && this.finStatus.HE === true;
     },
-    computed: {
-        showTrueEndVisuals() { return this.finStatus && this.finStatus.HE === true; },
-        hasSaveData() { return this.recoveryData && this.recoveryData.length > 0; },
-        mainMenuTopOffset() {
-          const topWithTrueEnd = 195;
-          const topWithoutTrueEnd = 225;
-          return this.showTrueEndVisuals ? topWithTrueEnd : topWithoutTrueEnd;
-        }
+    hasSaveData() {
+      return this.recoveryData && this.recoveryData.length > 0;
     },
-    onInit() {
-      console.log("[Index] onInit: Loading initial data.");
-      this.loadRecoveryData()
-          .then(() => this.loadFinStatus())
-          .then(() => this.checkIfTipsNeeded())
-          .catch(err => { console.error("[Index] Load chain error:", err); this.checkIfTipsNeeded(); });
+    mainMenuTopOffset() {
+      const topWithTrueEnd = 195;
+      const topWithoutTrueEnd = 225;
+      return this.showTrueEndVisuals ? topWithTrueEnd : topWithoutTrueEnd;
     },
-    loadRecoveryData() { return new Promise((resolve) => {
-        storage.get({ key: STORAGE_KEYS.RECOVERY_DATA,
-            success: (d) => { if (d) { try { this.recoveryData = JSON.parse(d); } catch (e) { this.recoveryData = []; } } else { this.recoveryData = []; } resolve(); },
-            fail: (d,c) => { console.warn(`[Index] Load recovery fail: ${d}, ${c}`); this.recoveryData = []; resolve(); }
-        });
-    }); },
-     loadFinStatus() { return new Promise((resolve) => {
-        storage.get({ key: STORAGE_KEYS.FIN_STATUS,
-            success: (d) => { const ds = { HE: false, BE: false }; let s = {}; if (d) { try { s = JSON.parse(d); } catch (e) {} } this.finStatus = { ...ds, ...s }; resolve(); },
-            fail: (d,c) => { console.warn(`[Index] Load fin fail: ${d}, ${c}`); this.finStatus = { HE: false, BE: false }; resolve(); }
-        });
-    }); },
-     checkIfTipsNeeded() { storage.get({ key: STORAGE_KEYS.TIPS_SHOWN,
-         success: (d) => { let flag = null; if (d) { try { flag = JSON.parse(d); } catch (e) {} } if (flag !== TIPS_SEEN_FLAG) { setTimeout(() => { this.isTipsOverlayVisible = true; }, 0); } else { this.isTipsOverlayVisible = false; } },
-         fail: (d,c) => { console.warn(`[Index] Check tips fail: ${d}, ${c}`); setTimeout(() => { this.isTipsOverlayVisible = true; }, 0); }
-     });
-     },
-    startGame() {
-      // 优化：只显示一个toast, 并且在跳转前清空历史记录
-      prompt.showToast({ message: "加载游戏中..." });
-      storage.set({
-        key: STORAGE_KEYS.HISTORY_LOG,
-        value: '[]', // 清空为-一个空的json数组字符串
-        success: () => {
-          router.push({ uri: 'pages/detail' });
-        },
-        fail: () => { // 即使清空失败，也继续游戏
-          router.push({ uri: 'pages/detail' });
-        }
+  },
+  onInit() {
+    console.log('[Index] onInit: Loading initial data.');
+    this.loadRecoveryData()
+      .then(() => this.loadFinStatus())
+      .then(() => this.checkIfTipsNeeded())
+      .catch((err) => {
+        console.error('[Index] Load chain error:', err);
+        this.checkIfTipsNeeded();
       });
-    },
-    loadGame(indexOrType) {
-        let loadParam;
-        let toastMessage = '';
+  },
+  loadRecoveryData() {
+    return new Promise((resolve) => {
+      storage.get({
+        key: STORAGE_KEYS.RECOVERY_DATA,
+        success: (d) => {
+          if (d) {
+            try {
+              this.recoveryData = JSON.parse(d);
+            } catch (e) {
+              this.recoveryData = [];
+            }
+          } else {
+            this.recoveryData = [];
+          }
+          resolve();
+        },
+        fail: (d, c) => {
+          console.warn(`[Index] Load recovery fail: ${d}, ${c}`);
+          this.recoveryData = [];
+          resolve();
+        },
+      });
+    });
+  },
+  loadFinStatus() {
+    return new Promise((resolve) => {
+      storage.get({
+        key: STORAGE_KEYS.FIN_STATUS,
+        success: (d) => {
+          const ds = { HE: false, BE: false };
+          let s = {};
+          if (d) {
+            try {
+              s = JSON.parse(d);
+            } catch (e) {}
+          }
+          this.finStatus = { ...ds, ...s };
+          resolve();
+        },
+        fail: (d, c) => {
+          console.warn(`[Index] Load fin fail: ${d}, ${c}`);
+          this.finStatus = { HE: false, BE: false };
+          resolve();
+        },
+      });
+    });
+  },
+  checkIfTipsNeeded() {
+    storage.get({
+      key: STORAGE_KEYS.TIPS_SHOWN,
+      success: (d) => {
+        let flag = null;
+        if (d) {
+          try {
+            flag = JSON.parse(d);
+          } catch (e) {}
+        }
+        if (flag !== TIPS_SEEN_FLAG) {
+          setTimeout(() => {
+            this.isTipsOverlayVisible = true;
+          }, 0);
+        } else {
+          this.isTipsOverlayVisible = false;
+        }
+      },
+      fail: (d, c) => {
+        console.warn(`[Index] Check tips fail: ${d}, ${c}`);
+        setTimeout(() => {
+          this.isTipsOverlayVisible = true;
+        }, 0);
+      },
+    });
+  },
+  startGame() {
+    // 优化：只显示一个toast, 并且在跳转前清空历史记录
+    prompt.showToast({ message: '加载游戏中...' });
+    storage.set({
+      key: STORAGE_KEYS.HISTORY_LOG,
+      value: '[]', // 清空为-一个空的json数组字符串
+      success: () => {
+        router.push({ uri: 'pages/detail' });
+      },
+      fail: () => {
+        // 即使清空失败，也继续游戏
+        router.push({ uri: 'pages/detail' });
+      },
+    });
+  },
+  loadGame(indexOrType) {
+    let loadParam;
+    let toastMessage = '';
 
-         if (typeof indexOrType === 'number') {
-             if (indexOrType >= 0 && indexOrType < this.recoveryData.length) {
-                 loadParam = { type: 'load', index: indexOrType };
-                 toastMessage = `读取存档 ${indexOrType + 1}...`;
-             } else {
-                 prompt.showToast({ message: "无效存档" }); return;
-             }
-         }
-         else if (indexOrType === 'TE') {
-             loadParam = { type: 'TE' };
-             toastMessage = "加载 True End...";
-         }
-         else if (indexOrType === 'BE') {
-            loadParam = { type: 'BE' };
-            toastMessage = "加载 Bad End...";
-         }
-         else {
-             prompt.showToast({ message: "无效类型" }); return;
-         }
+    if (typeof indexOrType === 'number') {
+      if (indexOrType >= 0 && indexOrType < this.recoveryData.length) {
+        loadParam = { type: 'load', index: indexOrType };
+        toastMessage = `读取存档 ${indexOrType + 1}...`;
+      } else {
+        prompt.showToast({ message: '无效存档' });
+        return;
+      }
+    } else if (indexOrType === 'TE') {
+      loadParam = { type: 'TE' };
+      toastMessage = '加载 True End...';
+    } else if (indexOrType === 'BE') {
+      loadParam = { type: 'BE' };
+      toastMessage = '加载 Bad End...';
+    } else {
+      prompt.showToast({ message: '无效类型' });
+      return;
+    }
 
-         this.hideLoadOverlay();
-         prompt.showToast({ message: toastMessage });
-         // 优化：跳转前清空历史记录
-         storage.set({
-           key: STORAGE_KEYS.HISTORY_LOG,
-           value: '[]',
-           success: () => {
-             router.push({ uri: `pages/detail`, params: { load: loadParam } });
-           },
-           fail: () => { // 即使清空失败，也继续游戏
-             router.push({ uri: `pages/detail`, params: { load: loadParam } });
-           }
-         });
-    },
-    exitApp() { try { this.$app.exit(); } catch(e) { prompt.showToast({ message: "无法退出" }); } },
-    showLoadOverlay() { if (this.hasSaveData) { this.isLoadOverlayVisible = true; } else { prompt.showToast({message: "没有存档"}); } },
-    hideLoadOverlay() { this.isLoadOverlayVisible = false; },
-    showSettingsOverlay() {
-        console.log("[Index] showSettingsOverlay called. Navigating to settings page.");
-        router.push({ uri: 'pages/settings' });
-    },
-    hideTipsOverlay() { this.isTipsOverlayVisible = false; storage.set({ key: STORAGE_KEYS.TIPS_SHOWN, value: JSON.stringify(TIPS_SEEN_FLAG) }); },
-  }
+    this.hideLoadOverlay();
+    prompt.showToast({ message: toastMessage });
+    // 优化：跳转前清空历史记录
+    storage.set({
+      key: STORAGE_KEYS.HISTORY_LOG,
+      value: '[]',
+      success: () => {
+        router.push({ uri: `pages/detail`, params: { load: loadParam } });
+      },
+      fail: () => {
+        // 即使清空失败，也继续游戏
+        router.push({ uri: `pages/detail`, params: { load: loadParam } });
+      },
+    });
+  },
+  exitApp() {
+    try {
+      this.$app.exit();
+    } catch (e) {
+      prompt.showToast({ message: '无法退出' });
+    }
+  },
+  showLoadOverlay() {
+    if (this.hasSaveData) {
+      this.isLoadOverlayVisible = true;
+    } else {
+      prompt.showToast({ message: '没有存档' });
+    }
+  },
+  hideLoadOverlay() {
+    this.isLoadOverlayVisible = false;
+  },
+  showSettingsOverlay() {
+    console.log('[Index] showSettingsOverlay called. Navigating to settings page.');
+    router.push({ uri: 'pages/settings' });
+  },
+  hideTipsOverlay() {
+    this.isTipsOverlayVisible = false;
+    storage.set({ key: STORAGE_KEYS.TIPS_SHOWN, value: JSON.stringify(TIPS_SEEN_FLAG) });
+  },
+};
 </script>

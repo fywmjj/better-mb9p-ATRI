@@ -1,22 +1,35 @@
 module.exports = {
-  printWidth: 100, // 指定代码长度，超出换行
-  tabWidth: 2, // tab 键的宽度
-  useTabs: false, // 使用空格替代tab
-  semi: false, // 结尾加上分号
-  singleQuote: false, // 使用单引号
-  quoteProps: "consistent", // 要求对象字面量属性是否使用引号包裹,(‘as-needed’: 没有特殊要求，禁止使用，'consistent': 保持一致 , preserve: 不限制，想用就用)
-  trailingComma: "none", // 不添加对象和数组最后一个元素的逗号
-  bracketSpacing: false, // 对象中对空格和空行进行处理
-  jsxBracketSameLine: false, // 在多行JSX元素的最后一行追加 >
-  requirePragma: false, // 是否严格按照文件顶部的特殊注释格式化代码
-  insertPragma: false, // 是否在格式化的文件顶部插入Pragma标记，以表明该文件被prettier格式化过了
-  proseWrap: "preserve", // 按照文件原样折行
-  htmlWhitespaceSensitivity: "ignore", // html文件的空格敏感度，控制空格是否影响布局
-  endOfLine: "auto", // 结尾是 \n \r \n\r auto
+  // 建议将 printWidth 设置为 80 或 100，100 在现代显示器上是合理的
+  printWidth: 100,
+  // 保持 2 个空格的缩进
+  tabWidth: 2,
+  useTabs: false,
+  // 建议使用分号，避免 ASI (自动分号插入) 带来的潜在问题
+  semi: true,
+  // 建议使用单引号，这是社区更普遍的风格
+  singleQuote: true,
+  // 保持对象属性引号的一致性
+  quoteProps: 'consistent',
+  // 强烈建议使用尾随逗号，这会让 git diff 更清晰，并使添加新项更容易
+  trailingComma: 'es5',
+  // 建议在括号内使用空格，增加可读性 e.g. { foo: bar }
+  bracketSpacing: true,
+  // 保持 JSX > 在新的一行，增强可读性
+  jsxBracketSameLine: false,
+  // 不需要 pragma
+  requirePragma: false,
+  insertPragma: false,
+  // 保持 markdown 折行
+  proseWrap: 'preserve',
+  // 忽略 html 中的空格问题
+  htmlWhitespaceSensitivity: 'ignore',
+  // 建议使用 'lf' 来保证跨平台的一致性
+  endOfLine: 'lf',
+  // 针对 .ux 文件的解析器配置，保持不变
   overrides: [
     {
-      files: "*.ux",
-      options: {parser: "vue"}
-    }
-  ]
-}
+      files: '*.ux',
+      options: { parser: 'vue' },
+    },
+  ],
+};

@@ -82,3 +82,9 @@ coverage/
 *.zip
 *.tar.*
 *.rar
+
+# === AI Assistant Tools ===
+.claude/
+.claude-code-router/
+.gemini/
+GEMINI.md

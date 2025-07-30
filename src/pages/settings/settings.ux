@@ -1,262 +1,334 @@
 <template>
-  <div class="settings-page-container"> <!-- 新的设置页面根容器 -->
+  <div class="settings-page-container">
+    <!-- 新的设置页面根容器 -->
     <!-- 设置界面的背景图 -->
     <image class="settings-bg-image" src="/common/images/ev000b.png"></image>
 
     <div class="settings-controls-wrapper">
-        <div class="settings-controls">
-            <div class="settings-top-buttons">
-                <text class="settings-action-text" @click="saveSettingsAndClose()">保存并退出</text>
-                <text class="settings-action-text" @click="closeSettingsPage()">直接退出</text>
-            </div>
-            <div class="setting-item">
-                <text class="setting-label">显示速度 ({{ tempSettings.textSpeed }})：</text>
-                <slider id="textSpeedSlider" class="setting-slider" min="20" max="60" step="1" value="{{ tempSettings.textSpeed }}" @change="handleTextSpeedChange"></slider>
-            </div>
-            <div class="setting-item">
-                <text class="setting-label">文字大小 ({{ tempSettings.textSize }})：</text>
-                 <slider id="textSizeSlider" class="setting-slider" min="20" max="32" step="1" value="{{ tempSettings.textSize }}" @change="handleTextSizeChange"></slider>
-            </div>
+      <div class="settings-controls">
+        <div class="settings-top-buttons">
+          <text class="settings-action-text" @click="saveSettingsAndClose()">保存并退出</text>
+          <text class="settings-action-text" @click="closeSettingsPage()">直接退出</text>
         </div>
+        <div class="setting-item">
+          <text class="setting-label">显示速度 ({{ tempSettings.textSpeed }})：</text>
+          <slider
+            id="textSpeedSlider"
+            class="setting-slider"
+            min="20"
+            max="60"
+            step="1"
+            value="{{ tempSettings.textSpeed }}"
+            @change="handleTextSpeedChange"
+          ></slider>
+        </div>
+        <div class="setting-item">
+          <text class="setting-label">文字大小 ({{ tempSettings.textSize }})：</text>
+          <slider
+            id="textSizeSlider"
+            class="setting-slider"
+            min="20"
+            max="32"
+            step="1"
+            value="{{ tempSettings.textSize }}"
+            @change="handleTextSizeChange"
+          ></slider>
+        </div>
+      </div>
 
-        <!-- 预览文本区域 -->
-        <div class="settings-preview-area">
-            <!-- 将 text_bg.png 作为预览区域的背景 -->
-            <image class="preview-text-bg" src="/common/images/text_bg.png"></image>
-            <scroll scroll-y="true" bounces="true" class="settings-preview-scroll">
-                <text class="settings-preview-text" style="font-size: {{ tempSettings.textSize }}px;">{{ textPreviewContent }}</text>
-            </scroll>
-        </div>
+      <!-- 预览文本区域 -->
+      <div class="settings-preview-area">
+        <!-- 将 text_bg.png 作为预览区域的背景 -->
+        <image class="preview-text-bg" src="/common/images/text_bg.png"></image>
+        <scroll scroll-y="true" bounces="true" class="settings-preview-scroll">
+          <text class="settings-preview-text" style="font-size: {{ tempSettings.textSize }}px;">
+            {{ textPreviewContent }}
+          </text>
+        </scroll>
+      </div>
     </div>
   </div>
 </template>
 
 <style>
-  .settings-page-container {
-    width: 336px;
-    height: 480px;
-    position: relative;
-    background-color: rgba(255, 255, 255, 0.95);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start; /* 从顶部开始排列 */
-    overflow: hidden;
-  }
-  .settings-bg-image { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; } /* 背景图置于最底层 */
+.settings-page-container {
+  width: 336px;
+  height: 480px;
+  position: relative;
+  background-color: rgba(255, 255, 255, 0.95);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start; /* 从顶部开始排列 */
+  overflow: hidden;
+}
+.settings-bg-image {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+} /* 背景图置于最底层 */
 
-  .settings-controls-wrapper {
-    width: 100%;
-    height: 100%; /* 确保 wrapper 占满父容器 */
-    position: relative; /* 为内部绝对定位的元素提供上下文 */
-    display: flex;
-    flex-direction: column;
-    z-index: 1; /* 高于背景图 */
-  }
+.settings-controls-wrapper {
+  width: 100%;
+  height: 100%; /* 确保 wrapper 占满父容器 */
+  position: relative; /* 为内部绝对定位的元素提供上下文 */
+  display: flex;
+  flex-direction: column;
+  z-index: 1; /* 高于背景图 */
+}
 
-  .settings-controls {
-    width: 100%;
-    padding: 20px;
-    background-color: rgba(0, 0, 0, 0.4); /* 半透明背景，让主背景图能透出来一点 */
-    display: flex;
-    flex-direction: column;
-    flex-shrink: 0;
-    /* margin-bottom: 155px; */ /* 移除这个，让预览区域决定其位置 */
-  }
-  .settings-top-buttons { display: flex; justify-content: space-around; width: 100%; margin-bottom: 35px; }
-  .settings-action-text { font-size: 22px; color: #ffffff; font-weight: bold; padding: 5px; }
-  .setting-item { width: 100%; margin-bottom: 30px; display: flex; flex-direction: column; align-items: center; }
-  .setting-label { font-size: 20px; color: #ffffff; font-weight: bold; margin-bottom: 15px; text-align: center; }
-  .setting-slider { width: 90%; max-width: 250px; }
+.settings-controls {
+  width: 100%;
+  padding: 20px;
+  background-color: rgba(0, 0, 0, 0.4); /* 半透明背景，让主背景图能透出来一点 */
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  /* margin-bottom: 155px; */ /* 移除这个，让预览区域决定其位置 */
+}
+.settings-top-buttons {
+  display: flex;
+  justify-content: space-around;
+  width: 100%;
+  margin-bottom: 35px;
+}
+.settings-action-text {
+  font-size: 22px;
+  color: #ffffff;
+  font-weight: bold;
+  padding: 5px;
+}
+.setting-item {
+  width: 100%;
+  margin-bottom: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.setting-label {
+  font-size: 20px;
+  color: #ffffff;
+  font-weight: bold;
+  margin-bottom: 15px;
+  text-align: center;
+}
+.setting-slider {
+  width: 90%;
+  max-width: 250px;
+}
 
-  /* 新增：预览文本区域容器 */
-  .settings-preview-area {
-    position: absolute; /* 相对于 settings-controls-wrapper 定位 */
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 165px; /* 与 text_bg.png 的设计高度一致 */
-    /* background-color: #f00; */ /* 临时背景色，方便调试预览区域范围 */
-  }
+/* 新增：预览文本区域容器 */
+.settings-preview-area {
+  position: absolute; /* 相对于 settings-controls-wrapper 定位 */
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 165px; /* 与 text_bg.png 的设计高度一致 */
+  /* background-color: #f00; */ /* 临时背景色，方便调试预览区域范围 */
+}
 
-  /* 预览文本区域的背景图 */
-  .preview-text-bg {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 100%; /* 占满 settings-preview-area */
-    z-index: 1; /* 在滚动区域之下 */
-  }
+/* 预览文本区域的背景图 */
+.preview-text-bg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 100%; /* 占满 settings-preview-area */
+  z-index: 1; /* 在滚动区域之下 */
+}
 
-  .settings-preview-scroll {
-    position: absolute; /* 相对于 settings-preview-area 定位 */
-    bottom: 10px;      /* 根据 text_bg.png 的设计调整内边距 */
-    left: 8px;       /* 根据 text_bg.png 的设计调整内边距 */
-    right: 8px;      /* 根据 text_bg.png 的设计调整内边距 */
-    height: 145px;   /* 调整滚动区域高度以适应背景图 */
-    /* overflow: hidden; */ /* scroll 组件自带滚动，这里可以不用 */
-    z-index: 2; /* 在背景图之上 */
-  }
-  .settings-preview-text {
-    color: #ffffff;
-    font-weight: bold;
-    width: 100%;
-    text-align: left;
-  }
+.settings-preview-scroll {
+  position: absolute; /* 相对于 settings-preview-area 定位 */
+  bottom: 10px; /* 根据 text_bg.png 的设计调整内边距 */
+  left: 8px; /* 根据 text_bg.png 的设计调整内边距 */
+  right: 8px; /* 根据 text_bg.png 的设计调整内边距 */
+  height: 145px; /* 调整滚动区域高度以适应背景图 */
+  /* overflow: hidden; */ /* scroll 组件自带滚动，这里可以不用 */
+  z-index: 2; /* 在背景图之上 */
+}
+.settings-preview-text {
+  color: #ffffff;
+  font-weight: bold;
+  width: 100%;
+  text-align: left;
+}
 </style>
 
 <script>
-  import router from "@system.router";
-  import storage from '@system.storage';
-  import prompt from '@system.prompt';
+import router from '@system.router';
+import storage from '@system.storage';
+import prompt from '@system.prompt';
 
-  const STORAGE_KEYS = { SETTINGS: 'settings' };
-  const DEFAULT_SETTINGS = { textSpeed: 40, textSize: 22 };
+const STORAGE_KEYS = { SETTINGS: 'settings' };
+const DEFAULT_SETTINGS = { textSpeed: 40, textSize: 22 };
 
-  export default {
-    private: {
-      settings: { ...DEFAULT_SETTINGS },
-      tempSettings: { ...DEFAULT_SETTINGS },
-      textPreviewContent: '',
-      textPreviewIndex: 0,
-      textPreviewTimerId: null,
-      textPreviewText: `Atri -My Dear Moments-\n文字显示样本，用于预览文本速度和大小。\nSample text for previewing speed and size. (^_^)\n写完这段去喝咖啡☕️`,
-    },
+export default {
+  private: {
+    settings: { ...DEFAULT_SETTINGS },
+    tempSettings: { ...DEFAULT_SETTINGS },
+    textPreviewContent: '',
+    textPreviewIndex: 0,
+    textPreviewTimerId: null,
+    textPreviewText: `Atri -My Dear Moments-\n文字显示样本，用于预览文本速度和大小。\nSample text for previewing speed and size. (^_^)\n写完这段去喝咖啡☕️`,
+  },
 
-    onInit() {
-      console.log("[Settings] onInit: Loading settings.");
-      storage.get({
-        key: STORAGE_KEYS.SETTINGS,
-        success: (d) => {
-          let s = {};
-          if (d) {
-            try { s = JSON.parse(d); } catch (e) { console.error("[Settings] Parse settings error:", e); }
+  onInit() {
+    console.log('[Settings] onInit: Loading settings.');
+    storage.get({
+      key: STORAGE_KEYS.SETTINGS,
+      success: (d) => {
+        let s = {};
+        if (d) {
+          try {
+            s = JSON.parse(d);
+          } catch (e) {
+            console.error('[Settings] Parse settings error:', e);
           }
-          this.settings = { ...DEFAULT_SETTINGS, ...s };
-          console.log("[Settings] Settings loaded:", JSON.stringify(this.settings));
-          this.tempSettings = { ...this.settings };
-          this.startTextPreviewAnimation();
+        }
+        this.settings = { ...DEFAULT_SETTINGS, ...s };
+        console.log('[Settings] Settings loaded:', JSON.stringify(this.settings));
+        this.tempSettings = { ...this.settings };
+        this.startTextPreviewAnimation();
+      },
+      fail: (d, c) => {
+        console.warn(`[Settings] Load settings fail: ${d}, ${c}`);
+        this.settings = { ...DEFAULT_SETTINGS };
+        this.tempSettings = { ...this.settings };
+        this.startTextPreviewAnimation();
+      },
+      complete: () => {
+        console.log('[Settings] storage.get complete.');
+      },
+    });
+  },
+  onHide() {
+    console.log('[Settings] onHide called. Stopping text preview animation.');
+    this.stopTextPreviewAnimation();
+  },
+  onDestroy() {
+    console.log('[Settings] onDestroy called. Stopping text preview animation.');
+    this.stopTextPreviewAnimation();
+  },
+
+  handleTextSpeedChange(event) {
+    console.log('[Settings] handleTextSpeedChange triggered, event:', JSON.stringify(event));
+    if (event && typeof event.progress === 'number') {
+      this.updateTempSetting('textSpeed', event.progress);
+    } else {
+      console.error(
+        '[Settings] handleTextSpeedChange: event or event.progress is invalid.',
+        JSON.stringify(event)
+      );
+      const sliderElement = this.$element('textSpeedSlider');
+      if (sliderElement && typeof sliderElement.attr.value === 'number') {
+        console.warn('[Settings] handleTextSpeedChange: Fallback to getting value from element.');
+        this.updateTempSetting('textSpeed', sliderElement.attr.value);
+      }
+    }
+  },
+
+  handleTextSizeChange(event) {
+    console.log('[Settings] handleTextSizeChange triggered, event:', JSON.stringify(event));
+    if (event && typeof event.progress === 'number') {
+      this.updateTempSetting('textSize', event.progress);
+    } else {
+      console.error(
+        '[Settings] handleTextSizeChange: event or event.progress is invalid.',
+        JSON.stringify(event)
+      );
+      const sliderElement = this.$element('textSizeSlider');
+      if (sliderElement && typeof sliderElement.attr.value === 'number') {
+        console.warn('[Settings] handleTextSizeChange: Fallback to getting value from element.');
+        this.updateTempSetting('textSize', sliderElement.attr.value);
+      }
+    }
+  },
+  updateTempSetting(key, value) {
+    console.log(`[Settings] updateTempSetting: key=${key}, value=${value}`);
+    let newValue = value;
+    if (typeof newValue === 'number' && (key === 'textSpeed' || key === 'textSize')) {
+      if (key === 'textSpeed') newValue = Math.max(20, Math.min(60, Math.round(newValue)));
+      if (key === 'textSize') newValue = Math.max(20, Math.min(32, Math.round(newValue)));
+      this.tempSettings[key] = newValue;
+      console.log(`[Settings] tempSettings.${key} updated to: ${this.tempSettings[key]}`);
+      if (key === 'textSpeed') {
+        console.log('[Settings] Text speed changed, restarting preview animation.');
+        this.startTextPreviewAnimation();
+      }
+    } else {
+      console.warn(
+        `[Settings] Invalid slider value/key in updateTempSetting. value type: ${typeof newValue}, key: ${key}`
+      );
+    }
+  },
+
+  saveSettingsAndClose() {
+    this.settings = { ...this.tempSettings };
+    try {
+      const s = JSON.stringify(this.settings);
+      storage.set({
+        key: STORAGE_KEYS.SETTINGS,
+        value: s,
+        success: () => {
+          prompt.showToast({ message: '设置已保存' });
+          router.back();
         },
         fail: (d, c) => {
-          console.warn(`[Settings] Load settings fail: ${d}, ${c}`);
-          this.settings = { ...DEFAULT_SETTINGS };
-          this.tempSettings = { ...this.settings };
-          this.startTextPreviewAnimation();
+          prompt.showToast({ message: `保存失败` });
+          console.error(`[Settings] Save setting fail: ${d}, ${c}`);
         },
-        complete: () => {
-          console.log("[Settings] storage.get complete.");
-        }
+        complete: () => {},
       });
-    },
-    onHide() {
-      console.log("[Settings] onHide called. Stopping text preview animation.");
-      this.stopTextPreviewAnimation();
-    },
-    onDestroy() {
-      console.log("[Settings] onDestroy called. Stopping text preview animation.");
-      this.stopTextPreviewAnimation();
-    },
+    } catch (e) {
+      prompt.showToast({ message: '设置数据异常' });
+      console.error('[Settings] Stringify settings fail:', e);
+    }
+  },
 
-    handleTextSpeedChange(event) {
-      console.log("[Settings] handleTextSpeedChange triggered, event:", JSON.stringify(event));
-      if (event && typeof event.progress === 'number') {
-        this.updateTempSetting('textSpeed', event.progress);
-      } else {
-        console.error("[Settings] handleTextSpeedChange: event or event.progress is invalid.", JSON.stringify(event));
-        const sliderElement = this.$element('textSpeedSlider');
-        if (sliderElement && typeof sliderElement.attr.value === 'number') {
-            console.warn("[Settings] handleTextSpeedChange: Fallback to getting value from element.");
-            this.updateTempSetting('textSpeed', sliderElement.attr.value);
-        }
-      }
-    },
+  closeSettingsPage() {
+    console.log('[Settings] Closing settings page without saving.');
+    router.back();
+  },
 
-    handleTextSizeChange(event) {
-      console.log("[Settings] handleTextSizeChange triggered, event:", JSON.stringify(event));
-      if (event && typeof event.progress === 'number') {
-        this.updateTempSetting('textSize', event.progress);
-      } else {
-        console.error("[Settings] handleTextSizeChange: event or event.progress is invalid.", JSON.stringify(event));
-        const sliderElement = this.$element('textSizeSlider');
-        if (sliderElement && typeof sliderElement.attr.value === 'number') {
-            console.warn("[Settings] handleTextSizeChange: Fallback to getting value from element.");
-            this.updateTempSetting('textSize', sliderElement.attr.value);
-        }
-      }
-    },
-    updateTempSetting(key, value) {
-      console.log(`[Settings] updateTempSetting: key=${key}, value=${value}`);
-      let newValue = value;
-      if (typeof newValue === 'number' && (key === 'textSpeed' || key === 'textSize')) {
-          if (key === 'textSpeed') newValue = Math.max(20, Math.min(60, Math.round(newValue)));
-          if (key === 'textSize') newValue = Math.max(20, Math.min(32, Math.round(newValue)));
-          this.tempSettings[key] = newValue;
-          console.log(`[Settings] tempSettings.${key} updated to: ${this.tempSettings[key]}`);
-          if (key === 'textSpeed') {
-            console.log("[Settings] Text speed changed, restarting preview animation.");
-            this.startTextPreviewAnimation();
-          }
-      } else {
-          console.warn(`[Settings] Invalid slider value/key in updateTempSetting. value type: ${typeof newValue}, key: ${key}`);
-      }
-    },
-
-    saveSettingsAndClose() {
-        this.settings = { ...this.tempSettings };
-        try {
-            const s = JSON.stringify(this.settings);
-            storage.set({ key: STORAGE_KEYS.SETTINGS, value: s,
-                success: () => {
-                    prompt.showToast({ message: '设置已保存' });
-                    router.back();
-                },
-                fail: (d, c) => {
-                    prompt.showToast({ message: `保存失败` });
-                    console.error(`[Settings] Save setting fail: ${d}, ${c}`);
-                },
-                complete: () => {}
-            });
-        } catch (e) {
-            prompt.showToast({ message: '设置数据异常' });
-            console.error("[Settings] Stringify settings fail:", e);
-        }
-    },
-
-    closeSettingsPage() {
-      console.log("[Settings] Closing settings page without saving.");
-      router.back();
-    },
-
-    startTextPreviewAnimation() {
-      console.log("[Settings] startTextPreviewAnimation called.");
-      this.stopTextPreviewAnimation();
-      this.textPreviewContent = '';
-      this.textPreviewIndex = 0;
-      console.log(`[Settings] Preview text reset. Starting animation with speed: ${this.tempSettings.textSpeed}`);
-      this.animateTextPreview();
-    },
-    stopTextPreviewAnimation() {
-      if (this.textPreviewTimerId) {
-        console.log(`[Settings] stopTextPreviewAnimation: Clearing timeout ID ${this.textPreviewTimerId}`);
-        clearTimeout(this.textPreviewTimerId);
-        this.textPreviewTimerId = null;
-      }
-    },
-    animateTextPreview() {
-      console.log(`[Settings] animateTextPreview: index=${this.textPreviewIndex}, speed=${this.tempSettings.textSpeed}, textLength=${this.textPreviewText.length}`);
-      if (this.textPreviewIndex < this.textPreviewText.length) {
-        this.textPreviewContent += this.textPreviewText.charAt(this.textPreviewIndex);
-        this.textPreviewIndex++;
-        this.textPreviewTimerId = setTimeout(() => {
-            this.animateTextPreview();
-        }, this.tempSettings.textSpeed);
-      } else {
-        console.log("[Settings] animateTextPreview: All text displayed. Scheduling restart.");
-        this.textPreviewTimerId = setTimeout(() => {
-            this.startTextPreviewAnimation();
-        }, 2000);
-      }
-    },
-  }
+  startTextPreviewAnimation() {
+    console.log('[Settings] startTextPreviewAnimation called.');
+    this.stopTextPreviewAnimation();
+    this.textPreviewContent = '';
+    this.textPreviewIndex = 0;
+    console.log(
+      `[Settings] Preview text reset. Starting animation with speed: ${this.tempSettings.textSpeed}`
+    );
+    this.animateTextPreview();
+  },
+  stopTextPreviewAnimation() {
+    if (this.textPreviewTimerId) {
+      console.log(
+        `[Settings] stopTextPreviewAnimation: Clearing timeout ID ${this.textPreviewTimerId}`
+      );
+      clearTimeout(this.textPreviewTimerId);
+      this.textPreviewTimerId = null;
+    }
+  },
+  animateTextPreview() {
+    console.log(
+      `[Settings] animateTextPreview: index=${this.textPreviewIndex}, speed=${this.tempSettings.textSpeed}, textLength=${this.textPreviewText.length}`
+    );
+    if (this.textPreviewIndex < this.textPreviewText.length) {
+      this.textPreviewContent += this.textPreviewText.charAt(this.textPreviewIndex);
+      this.textPreviewIndex++;
+      this.textPreviewTimerId = setTimeout(() => {
+        this.animateTextPreview();
+      }, this.tempSettings.textSpeed);
+    } else {
+      console.log('[Settings] animateTextPreview: All text displayed. Scheduling restart.');
+      this.textPreviewTimerId = setTimeout(() => {
+        this.startTextPreviewAnimation();
+      }, 2000);
+    }
+  },
+};
 </script>

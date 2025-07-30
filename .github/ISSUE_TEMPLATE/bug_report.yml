@@ -1,7 +1,7 @@
 name: Bug Report / 报告 Bug
 description: Report problems with this ported version / 报告此移植版本的问题
-title: "[Bug]: "
-labels: ["Bugs", "待确认 / tbc"]
+title: '[Bug]: '
+labels: ['Bugs', '待确认 / tbc']
 body:
   - type: markdown
     attributes:
@@ -70,7 +70,7 @@ body:
     attributes:
       label: System/Firmware Version / 系统（固件）版本
       description: 您的设备固件版本号是多少？ (如果知道) / What is your device's firmware version? (If known)
-      placeholder: "例如 / e.g., 1.x.x"
+      placeholder: '例如 / e.g., 1.x.x'
     validations:
       required: true # Strongly recommend making this required
 
@@ -79,7 +79,7 @@ body:
     attributes:
       label: App Version / 应用版本
       description: 您正在使用此应用的哪个版本？ (例如 Release Tag 或 Commit SHA) / Which version of this app are you using? (e.g., Release Tag or Commit SHA)
-      placeholder: "例如 / e.g., v1.0.1, a1b2c3d"
+      placeholder: '例如 / e.g., v1.0.1, a1b2c3d'
     validations:
       required: true
 
