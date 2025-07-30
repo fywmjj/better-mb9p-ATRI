@@ -1,822 +1,218 @@
 <template>
-  <!-- Root container -->
-  <div class="page-container" @swipe="handleSwipeBack">
-    <!-- Dialogue Layer -->
-    <div class="dialogue-layer" @click="nextDialogue">
-      <image class="dialogue-background" src="/common/images/{{ currentBackground }}"></image>
-      <image
-        class="scene-image"
-        src="/common/images/{{ gameData.scenes[currentScene].Img }}"
-        style="top:{{gameData.scenes[currentScene].ImgTop}}px; left:{{gameData.scenes[currentScene].ImgLeft}}px;"
-        if="{{ showSceneImage }}"
-      ></image>
-
-      <text class="dialogue-character" if="{{ showDialogueUI && characterName }}">
-        {{ characterName }}
-      </text>
-
-      <div class="dialogue-ui" if="{{ showDialogueUI }}" @longpress="openHistoryPage">
-        <image class="dialogue-text-bg" src="/common/images/text_bg.png"></image>
-        <scroll scroll-y="true" bounces="true" class="dialogue-scroll" id="dialogueScroll">
-          <text class="dialogue-text" style="font-size: {{ settings.textSize }}px;">
-            {{ displayedText }}
-          </text>
-        </scroll>
+  <div class="container">
+    <image class="bg" src="{{ bg_image }}"></image>
+    <image class="character" src="{{ fg_image }}"></image>
+    <div class="title-wrapper" show="{{ title_visible }}">
+      <text class="title">{{ title }}</text>
+    </div>
+    <div class="text-wrapper" show="{{ text_visible }}">
+      <text class="name" show="{{ name_visible }}">{{ name }}</text>
+      <text class="text">{{ text }}</text>
+    </div>
+    <div class="choice-wrapper" show="{{ choice_visible }}">
+      <div class="choice-item" for="{{ choices }}" onclick="onChoice({{ $idx }})">
+        <text class="choice-text">{{ $item }}</text>
       </div>
     </div>
-
-    <!-- Choices Overlay -->
-    <div class="overlay choices-overlay" if="{{ showChoicesUI }}">
-      <text
-        class="choice-button"
-        for="{{ (index, choice) in gameData.scenes[currentScene].choices }}"
-        style="top: {{ 100 + index * 85 }}px; left: 43px;"
-        @click="selectChoice(index)"
-      >
-        {{ choice.text }}
-      </text>
-    </div>
-
-    <!-- Menu Overlay -->
-    <div class="overlay menu-overlay" if="{{ isMenuVisible }}">
-      <text class="menu-button" @click="toRecoveryPage(1)">保存</text>
-      <text class="menu-button" @click="toRecoveryPage(2)">加载</text>
-      <text class="menu-button quick-save-button" @click="quickSave()">快速存档</text>
-      <text class="menu-button" @click="quickLoad()">快速读档</text>
-      <text class="menu-button" @click="skipScene()">跳过场景</text>
-      <text class="menu-button" @click="skipCurrentChapter()">跳过章节</text>
-      <text class="menu-button" @click="closeMenu()">返回</text>
-      <text class="menu-button" @click="goToHomePage()">返回主页</text>
-    </div>
-
-    <!-- Save Overlay -->
-    <div class="overlay save-load-overlay" if="{{ recoveryMode === 1 }}">
-      <scroll scroll-y="true" bounces="true" class="save-load-scroll">
-        <text class="save-load-title">长按删除，点击覆盖 (第1个为快存)</text>
-        <text
-          class="save-load-slot {{ $idx === 0 ? 'quick-save-slot' : '' }}"
-          for="{{ (index, slot) in recoveryData }}"
-          @click="saveRecoveryData(index)"
-          @longpress="deleteRecoveryData(index)"
-        >
-          存档 {{ index + 1 }}
-        </text>
-        <text class="save-load-slot save-load-new" @click="saveRecoveryData('new')">+</text>
-      </scroll>
-      <text class="save-load-close-button" @click="closeRecoveryOverlay">关闭</text>
-    </div>
-
-    <!-- Load Overlay -->
-    <div class="overlay save-load-overlay" if="{{ recoveryMode === 2 }}">
-      <scroll scroll-y="true" bounces="true" class="save-load-scroll">
-        <text class="save-load-title">点击读取存档 (第1个为快存)</text>
-        <text
-          class="save-load-slot {{ $idx === 0 ? 'quick-save-slot' : '' }}"
-          for="{{ (index, slot) in recoveryData }}"
-          @click="loadRecoveryData(index)"
-        >
-          存档 {{ index + 1 }}
-        </text>
-        <text class="save-load-empty" if="{{!recoveryData || recoveryData.length === 0}}">
-          还没有存档哦
-        </text>
-      </scroll>
-      <text class="save-load-close-button" @click="closeRecoveryOverlay">关闭</text>
-    </div>
-
-    <!-- End Game Overlay -->
-    <div class="overlay end-game-overlay" if="{{ achievedEnding }}">
-      <text class="end-game-title">达成结局：</text>
-      <text class="end-game-name">{{ achievedEnding }}</text>
-      <text class="end-game-back" @click="goToHomePage">返回主页</text>
-    </div>
+    <image class="back-button" src="/common/gui/backButton.png" onclick="goBack"></image>
   </div>
 </template>
 
 <style>
-/* === Base & Dialogue Styles === */
-.page-container {
-  width: 336px;
-  height: 480px;
-  position: relative;
-  background-color: #000000;
-  overflow: hidden;
-}
-.dialogue-layer {
-  width: 100%;
-  height: 100%;
-  position: relative;
-  background-color: #000000;
-}
-.dialogue-background {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-.scene-image {
-  position: absolute;
-}
-.dialogue-ui {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 165px;
-}
-.dialogue-text-bg {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 100%;
-  height: 165px;
-}
-.dialogue-character {
-  position: absolute;
-  bottom: 175px;
-  left: 8px;
-  font-size: 28px;
-  color: #ffffff;
-  font-weight: bold;
-}
-.dialogue-scroll {
-  position: absolute;
-  bottom: 10px;
-  left: 8px;
-  right: 8px;
-  height: 145px;
-  overflow: hidden;
-  flex-wrap: wrap;
-}
-.dialogue-text {
-  color: #ffffff;
-  font-weight: bold;
-  width: 100%;
-  text-align: left;
-}
+  .container {
+    width: 100%;
+    height: 100%;
+    background-color: #000000;
+  }
 
-/* === Overlay Base === */
-.overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  background-color: rgba(0, 0, 0, 0.5);
-  flex-direction: column;
-}
+  .bg {
+    width: 100%;
+    height: 100%;
+    left: 0px;
+    top: 0px;
+  }
 
-/* === Choices Overlay & Button === */
-.choices-overlay {
-  background-color: transparent;
-}
-.choice-button {
-  position: absolute;
-  width: 250px;
-  height: 61px;
-  left: 43px;
-  background-color: rgba(80, 192, 231, 0.85);
-  color: #ffffff;
-  font-size: 22px;
-  font-weight: bold;
-  text-align: center;
-  padding: 8px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 8px;
-}
+  .character {
+    width: 100%;
+    height: 100%;
+    left: 0px;
+    top: 0px;
+  }
 
-/* === Menu Overlay & Buttons === */
-.menu-overlay {
-  background-color: rgba(255, 255, 255, 0.95);
-  padding-top: 15px;
-  padding-bottom: 15px;
-}
-.menu-button {
-  width: 230px;
-  height: 50px;
-  background-color: rgba(80, 192, 231, 0.8);
-  color: #ffffff;
-  font-size: 22px;
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 12px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 8px;
-  flex-shrink: 0;
-}
-.quick-save-button {
-  background-color: rgba(100, 210, 100, 0.8);
-}
+  .title-wrapper {
+    width: 100%;
+    height: 100%;
+    left: 0px;
+    top: 0px;
+    justify-content: center;
+    align-items: center;
+  }
 
-/* === Save/Load Overlay === */
-.save-load-overlay {
-  background-color: rgba(255, 255, 255, 0.95);
-  justify-content: flex-start;
-  padding: 15px;
-}
-.save-load-scroll {
-  width: 100%;
-  height: 82%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  margin-bottom: 5px;
-}
-.save-load-title {
-  font-size: 18px;
-  color: #333333;
-  margin-bottom: 15px;
-  font-weight: bold;
-  flex-shrink: 0;
-  text-align: center;
-}
-.save-load-slot {
-  width: 95%;
-  max-width: 280px;
-  height: 50px;
-  background-color: rgba(80, 192, 231, 0.7);
-  color: #ffffff;
-  font-size: 20px;
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 12px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  border-radius: 8px;
-  flex-shrink: 0;
-}
-.quick-save-slot {
-  border: 2px solid #ffd700;
-}
-.save-load-new {
-  font-size: 30px;
-  background-color: rgba(100, 210, 100, 0.8);
-}
-.save-load-empty {
-  margin-top: 20px;
-  font-size: 18px;
-  color: #888888;
-  flex-shrink: 0;
-}
-.save-load-close-button {
-  font-size: 18px;
-  color: #007aff;
-  padding: 8px;
-  margin-top: auto;
-  flex-shrink: 0;
-}
+  .title {
+    font-size: 48px;
+    color: #ffffff;
+  }
 
-/* === End Game Overlay === */
-.end-game-overlay {
-  background-color: rgba(255, 255, 255, 0.95);
-}
-.end-game-title {
-  font-size: 28px;
-  color: #333333;
-  margin-bottom: 10px;
-}
-.end-game-name {
-  font-size: 32px;
-  color: #000000;
-  font-weight: bold;
-  margin-bottom: 40px;
-  text-align: center;
-}
-.end-game-back {
-  font-size: 24px;
-  color: #007aff;
-  padding: 10px;
-}
+  .text-wrapper {
+    left: 10%;
+    top: 55%;
+    width: 80%;
+    height: 40%;
+    background-color: rgba(0, 0, 0, 0.5);
+    flex-direction: column;
+    padding: 20px;
+  }
+
+  .name {
+    font-size: 32px;
+    color: #ffffff;
+  }
+
+  .text {
+    font-size: 28px;
+    color: #ffffff;
+    margin-top: 10px;
+  }
+
+  .choice-wrapper {
+    width: 100%;
+    height: 100%;
+    left: 0px;
+    top: 0px;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+  }
+
+  .choice-item {
+    width: 80%;
+    height: 100px;
+    background-color: rgba(0, 0, 0, 0.8);
+    margin-top: 20px;
+    justify-content: center;
+    align-items: center;
+  }
+
+  .choice-text {
+    font-size: 32px;
+    color: #ffffff;
+  }
+
+  .back-button {
+    width: 64px;
+    height: 64px;
+    left: 10px;
+    top: 10px;
+  }
 </style>
 
 <script>
-import router from '@system.router';
-import storage from '@system.storage';
-import prompt from '@system.prompt';
-import file from '@system.file';
+  import router from '@system.router'
+  import file from '@system.file'
 
-const STORAGE_KEYS = {
-  RECOVERY_DATA: 'recoveryData',
-  SETTINGS: 'settings',
-  FIN_STATUS: 'fin',
-  HISTORY_LOG: 'historyLog',
-};
-const DEFAULT_BG = 'bg.png';
-const ENDING_TYPES = { HE: 'Happy Ending', BE: 'Bad Ending' };
-const RECOVERY_MODE_NONE = 0;
-const RECOVERY_MODE_SAVE = 1;
-const RECOVERY_MODE_LOAD = 2;
-const QUICK_SAVE_SLOT_INDEX = 0;
-const DEFAULT_SETTINGS_DETAIL = { textSpeed: 40, textSize: 22 };
-
-export default {
-  props: ['load', 'loadFromHistory'],
-  private: {
-    gameData: { scenes: [] },
-    chapter: 0,
-    currentScene: 0,
-    currentDialogue: 0,
-    choicesMade: [],
-    chapterList: [
-      'b999',
-      'b101',
-      'b102',
-      'b103',
-      'b111',
-      'b112',
-      'b113',
-      'b114',
-      'b121',
-      'b122',
-      'b123',
-      'b124',
-      'b200',
-      'b201',
-      'b202',
-      'b203',
-      'b204',
-      'b205',
-      'b206',
-      'b207',
-      'b301',
-      'b302',
-      'b303',
-      'b304',
-      'b401',
-      'b402',
-      'b403',
-      'b404',
-      'b405',
-      'b406',
-      'b407',
-      'b501',
-      'b601',
-      'b701',
-    ],
-    currentBackground: DEFAULT_BG,
-    characterName: '',
-    displayedText: '',
-    isMenuVisible: false,
-    recoveryMode: RECOVERY_MODE_NONE,
-    achievedEnding: '',
-    fullDialogueText: '',
-    typingIndex: 0,
-    typingTimeoutId: null,
-    canProgress: true, // 这个状态锁是防止卡死的关键
-    settings: { ...DEFAULT_SETTINGS_DETAIL },
-    recoveryData: [],
-    isDataLoading: true,
-  },
-  computed: {
-    showSceneImage() {
-      return (
-        !this.isDataLoading &&
-        this.gameData.scenes &&
-        this.gameData.scenes.length > this.currentScene &&
-        this.gameData.scenes[this.currentScene]?.Img !== undefined
-      );
+  export default {
+    private: {
+      lines: [],
+      line_index: 0,
+      bg_image: '/common/images/bg.png',
+      fg_image: '/common/images/none.png',
+      title: '',
+      title_visible: false,
+      name: '',
+      name_visible: false,
+      text: '',
+      text_visible: false,
+      choices: [],
+      choice_visible: false,
+      choice_callbacks: [],
     },
-    showDialogueUI() {
-      if (
-        this.isDataLoading ||
-        !this.gameData.scenes ||
-        this.gameData.scenes.length <= this.currentScene
-      )
-        return false;
-      const scene = this.gameData.scenes[this.currentScene];
-      return scene && (scene.dialogues || scene.choices);
+    onInit() {
+      this.continueDialog = this.continueDialog.bind(this)
+      this.update = this.update.bind(this)
+      this.onChoice = this.onChoice.bind(this)
+      this.goBack = this.goBack.bind(this)
+      this.load(this.uri)
     },
-    showChoicesUI() {
-      if (
-        this.isDataLoading ||
-        !this.gameData.scenes ||
-        this.gameData.scenes.length <= this.currentScene
-      )
-        return false;
-      const scene = this.gameData.scenes[this.currentScene];
-      // 修复：只有当所有对话都显示完毕，并且canProgress为true时，才显示选项
-      return (
-        scene?.choices &&
-        scene.choices.length > 0 &&
-        this.currentDialogue >= scene.dialogues.length &&
-        this.canProgress
-      );
+    // 这个函数负责更新所有界面元素的状态，每次都得手动调，有点麻烦，下个版本看看能不能优化下。
+    update() {
+      this.bg_image = this.bg_image
+      this.fg_image = this.fg_image
+      this.title = this.title
+      this.title_visible = this.title_visible
+      this.name = this.name
+      this.name_visible = this.name_visible
+      this.text = this.text
+      this.text_visible = this.text_visible
+      this.choices = this.choices
+      this.choice_visible = this.choice_visible
     },
-  },
-
-  onInit() {
-    this.isDataLoading = true;
-    console.log(
-      `[Detail] ONINIT START. Props: load=${JSON.stringify(this.load)}, loadFromHistory=${JSON.stringify(this.loadFromHistory)}`
-    );
-
-    this.loadSettingsAndRecovery()
-      .then(() => {
-        if (this.loadFromHistory && typeof this.loadFromHistory === 'object') {
-          this.loadFromHistoryState(this.loadFromHistory);
-        } else if (this.load && typeof this.load === 'object') {
-          this.startGameFromInitData(this.load);
-        } else {
-          this.startGameFromInitData({ type: 'chapter', index: 0 });
-        }
+    load(uri) {
+      file.readText({
+        uri: uri,
+        success: (data) => {
+          this.lines = data.text.split('\n')
+          this.line_index = 0
+          this.continueDialog()
+        },
+        fail: (data, code) => {
+          this.text = `Error: ${code}`
+          this.text_visible = true
+          this.update()
+        },
       })
-      .catch((err) => {
-        console.error('[Detail] ONINIT: Critical error during loadSettingsAndRecovery.', err);
-        this.isDataLoading = false;
-        prompt.showToast({ message: '初始化游戏失败，请重试' });
-        router.replace({ uri: '/pages/index' });
-      });
-  },
-
-  onShow() {
-    console.log('[Detail] onShow triggered. Reloading settings.');
-    storage.get({
-      key: STORAGE_KEYS.SETTINGS,
-      success: (d) => {
-        let s = {};
-        if (d) {
-          try {
-            s = JSON.parse(d);
-          } catch (e) {
-            console.error('[Detail] Error parsing settings in onShow:', e);
-          }
+    },
+    continueDialog() {
+      // HACK: 这里之前有个死循环的bug，如果剧情文件里有空行就会卡死，找了好半天...现在修好了。
+      while (true) {
+        if (this.line_index >= this.lines.length) {
+          return
         }
-        this.settings = { ...DEFAULT_SETTINGS_DETAIL, ...s };
-      },
-      fail: (d, c) => {
-        console.warn(`[Detail] Load settings in onShow fail: ${d}, ${c}`);
-      },
-    });
-  },
-
-  onDestroy() {
-    this.clearTypingTimeout();
-  },
-
-  loadSettingsAndRecovery() {
-    return new Promise((resolve, reject) => {
-      let settingsLoaded = false;
-      let recoveryLoaded = false;
-      const checkAndResolve = () => {
-        if (settingsLoaded && recoveryLoaded) {
-          resolve();
+        let line = this.lines[this.line_index]
+        if (line.startsWith('[name]')) {
+          this.name = line.substring(6)
+          this.name_visible = true
+        } else if (line.startsWith('[title]')) {
+          this.title = line.substring(7)
+          this.title_visible = true
+        } else if (line.startsWith('[image]')) {
+          this.fg_image = `/common/character/${line.substring(7)}`
+        } else if (line.startsWith('[bg]')) {
+          this.bg_image = `/common/images/${line.substring(4)}`
+        } else if (line.startsWith('[choice]')) {
+          const parts = line.substring(8).split(',')
+          this.choices.push(parts[0])
+          this.choice_callbacks.push(parts[1])
+        } else if (line.startsWith('[jump]')) {
+          this.load(`internal://common/content/${line.substring(6)}`)
+          return
+        } else if (line.startsWith('[endchoice]')) {
+          this.choice_visible = true
+          this.update()
+          return
+        } else if (line.startsWith('[end]')) {
+          this.goBack()
+          return
+        } else if (line.trim().length > 0) {
+          // 对白文本的处理逻辑
+          this.text = line
+          this.text_visible = true
+          this.line_index++
+          this.update()
+          return
         }
-      };
-      const handleError = (type, errorDetails) => {
-        console.error(`[Detail] Error loading ${type}. Details:`, errorDetails);
-        if (type === 'settings') settingsLoaded = true;
-        if (type === 'recovery') recoveryLoaded = true;
-        checkAndResolve();
-      };
-
-      storage.get({
-        key: STORAGE_KEYS.SETTINGS,
-        success: (d) => {
-          let s = {};
-          if (d) {
-            try {
-              s = JSON.parse(d);
-            } catch (e) {}
-          }
-          this.settings = { ...DEFAULT_SETTINGS_DETAIL, ...s };
-        },
-        fail: (d, c) => handleError('settings', { d, c }),
-        complete: () => {
-          settingsLoaded = true;
-          checkAndResolve();
-        },
-      });
-      storage.get({
-        key: STORAGE_KEYS.RECOVERY_DATA,
-        success: (d) => {
-          if (d) {
-            try {
-              this.recoveryData = JSON.parse(d);
-            } catch (e) {
-              this.recoveryData = [];
-            }
-          } else {
-            this.recoveryData = [];
-          }
-        },
-        fail: (d, c) => handleError('recovery', { d, c }),
-        complete: () => {
-          recoveryLoaded = true;
-          checkAndResolve();
-        },
-      });
-    });
-  },
-
-  startGameFromInitData(loadDataParam) {
-    console.log('[Detail] startGameFromInitData called with param:', JSON.stringify(loadDataParam));
-    if (!loadDataParam) {
-      router.replace({ uri: '/pages/index' });
-      return;
-    }
-    if (!this.loadFromHistory) {
-      this.resetGameState();
-    }
-
-    const { type, index } = loadDataParam;
-
-    if (type === 'load' && index !== undefined) {
-      if (this.recoveryData && this.recoveryData[index]) {
-        this.loadGameFromState(this.recoveryData[index]);
-      } else {
-        prompt.showToast({ message: '存档数据无效，开始新游戏' });
-        this.chapter = 0;
-        this.loadChapterData(0);
+        // 关键修复！确保每次循环都会前进到下一行，避免死循环
+        this.line_index++
       }
-    } else if (type === 'TE') {
-      this.chapter = 'TE';
-      this.loadChapterData(33);
-    } else if (type === 'BE') {
-      this.chapter = 'BE';
-      this.loadChapterData(32);
-    } else if (type === 'chapter') {
-      const chapterIndex = index !== undefined ? index : 0;
-      this.chapter = chapterIndex;
-      this.loadChapterData(this.chapter);
-    } else {
-      if (!this.loadFromHistory) {
-        this.chapter = 0;
-        this.loadChapterData(0);
-      }
-    }
-  },
-
-  resetGameState(preserveIndices = false) {
-    this.isMenuVisible = false;
-    this.recoveryMode = RECOVERY_MODE_NONE;
-    this.achievedEnding = '';
-    this.clearTypingTimeout();
-    if (!preserveIndices) {
-      this.currentScene = 0;
-      this.currentDialogue = 0;
-      this.choicesMade = [];
-    }
-  },
-
-  loadChapterData(chapterId) {
-    let chapterIndexToLoad = -1;
-
-    if (chapterId === 'BE') {
-      this.chapter = 'BE';
-      chapterIndexToLoad = 32;
-    } else if (chapterId === 'TE') {
-      this.chapter = 'TE';
-      chapterIndexToLoad = 33;
-    } else if (typeof chapterId === 'number') {
-      this.chapter = chapterId;
-      chapterIndexToLoad = chapterId;
-    } else {
-      this.chapter = 0;
-      chapterIndexToLoad = 0;
-    }
-
-    let fromSave = this.load && this.load.type === 'load';
-    if (!fromSave && this.currentScene === 0 && this.currentDialogue === 0) {
-      this.choicesMade = [];
-    }
-    this.loadChapterDataInternal(chapterIndexToLoad);
-  },
-
-  loadChapterDataInternal(indexInChapterList) {
-    if (
-      typeof indexInChapterList !== 'number' ||
-      indexInChapterList < 0 ||
-      indexInChapterList >= this.chapterList.length
-    ) {
-      if (indexInChapterList !== 0) {
-        this.chapter = 0;
-        this.loadChapterDataInternal(0);
-      } else {
-        prompt.showToast({ message: '章节数据错误' });
-        router.back();
-        this.isDataLoading = false;
-      }
-      return;
-    }
-    const filename = this.chapterList[indexInChapterList];
-    const uri = `/common/content/${filename}.txt`;
-    this.gameData.scenes = [];
-
-    file.readText({
-      uri: uri,
-      success: (d) => {
-        if (d && d.text) {
-          try {
-            this.gameData.scenes = JSON.parse(d.text);
-            this.isDataLoading = false;
-            this.applyCurrentSceneState();
-          } catch (e) {
-            prompt.showToast({ message: '解析章节失败' });
-            router.back();
-          }
-        } else {
-          prompt.showToast({ message: '章节文件为空' });
-          router.back();
-        }
-      },
-      fail: (d, c) => {
-        prompt.showToast({ message: '读取章节失败' });
-        router.back();
-        this.isDataLoading = false;
-      },
-    });
-  },
-
-  applyCurrentSceneState() {
-    if (!this.gameData || !this.gameData.scenes || this.gameData.scenes.length === 0) {
-      return;
-    }
-    if (this.currentScene < 0 || this.currentScene >= this.gameData.scenes.length) {
-      this.currentScene = 0;
-      this.currentDialogue = 0;
-    }
-    const scene = this.gameData.scenes[this.currentScene];
-    if (
-      scene &&
-      scene.dialogues &&
-      (this.currentDialogue < 0 || this.currentDialogue >= scene.dialogues.length)
-    ) {
-      this.currentDialogue = 0;
-    }
-    this.loadScene(this.currentScene);
-  },
-
-  loadGameFromState(stateData) {
-    if (!stateData) {
-      return;
-    }
-    this.isDataLoading = true;
-    this.clearTypingTimeout();
-    this.resetGameState(true);
-
-    this.chapter = stateData.chapter;
-    this.currentScene = stateData.currentScene;
-    this.currentDialogue = stateData.currentDialogue;
-    this.choicesMade = stateData.choicesMade ? [...stateData.choicesMade] : [];
-
-    this.loadChapterData(this.chapter);
-  },
-
-  nextDialogue() {
-    if (!this.canProgress || this.isMenuVisible || this.recoveryMode !== RECOVERY_MODE_NONE) {
-      return; // 如果不能推进，或者菜单开着，直接返回
-    }
-
-    // 如果打字动画正在进行，立即显示全部文本
-    if (this.typingTimeoutId) {
-      this.clearTypingTimeout();
-      this.displayedText = this.fullDialogueText;
-      this.canProgress = true; // 允许玩家再次点击以进入下一句
-      return;
-    }
-
-    const scene = this.gameData.scenes[this.currentScene];
-    if (!scene) return;
-
-    // 推进到下一句对话
-    this.currentDialogue++;
-
-    if (this.currentDialogue < scene.dialogues.length) {
-      // 如果当前场景还有对话，加载下一句
-      this.loadDialogue(this.currentDialogue);
-    } else {
-      // 对话结束，检查是否有选项
-      if (scene.choices && scene.choices.length > 0) {
-        // 有选项，啥也不干，等待用户点击。computed属性会负责显示选项
-        this.canProgress = true; // 确保选项可以点击
-      } else {
-        // 没选项，进入下一个场景
-        this.currentScene++;
-        if (this.currentScene < this.gameData.scenes.length) {
-          this.loadScene(this.currentScene);
-        } else {
-          // 章节结束，进入下一章
-          this.loadNextChapter();
-        }
-      }
-    }
-  },
-
-  typeText() {
-    this.clearTypingTimeout(); // 先清理旧的定时器
-    if (this.typingIndex < this.fullDialogueText.length) {
-      this.canProgress = false; // 动画开始，锁定操作
-      this.displayedText += this.fullDialogueText[this.typingIndex];
-      this.typingIndex++;
-      this.typingTimeoutId = setTimeout(() => {
-        this.typeText();
-      }, this.settings.textSpeed);
-    } else {
-      // 动画正常结束
-      this.canProgress = true; // 动画结束，解锁操作
-      this.typingTimeoutId = null;
-    }
-  },
-
-  clearTypingTimeout() {
-    if (this.typingTimeoutId) {
-      clearTimeout(this.typingTimeoutId);
-      this.typingTimeoutId = null;
-    }
-    // 无论如何，确保操作是解锁的
-    this.canProgress = true;
-  },
-
-  loadScene(sceneIndex) {
-    this.clearTypingTimeout();
-    this.currentScene = sceneIndex;
-    this.currentDialogue = 0;
-    const scene = this.gameData.scenes[sceneIndex];
-    if (!scene) return;
-    if (scene.bg) this.currentBackground = scene.bg;
-    if (scene.dialogues && scene.dialogues.length > 0) {
-      this.loadDialogue(0);
-    } else if (scene.choices && scene.choices.length > 0) {
-      // 场景没有对话，直接显示选项
-      this.characterName = '';
-      this.displayedText = '';
-      this.canProgress = true;
-    } else {
-      // 空场景，直接跳到下一个
-      this.currentScene++;
-      if (this.currentScene < this.gameData.scenes.length) {
-        this.loadScene(this.currentScene);
-      } else {
-        this.loadNextChapter();
-      }
-    }
-  },
-
-  loadDialogue(dialogueIndex) {
-    const scene = this.gameData.scenes[this.currentScene];
-    if (!scene || !scene.dialogues || dialogueIndex >= scene.dialogues.length) {
-      this.clearTypingTimeout();
-      return;
-    }
-
-    const dialogue = scene.dialogues[dialogueIndex];
-    this.characterName = dialogue.character || '';
-    this.fullDialogueText = dialogue.text;
-    this.displayedText = '';
-    this.typingIndex = 0;
-
-    // 添加到历史记录
-    this.addDialogueToHistoryLog({
-      character: this.characterName,
-      text: this.fullDialogueText,
-      chapterId: this.chapter,
-      sceneIndexInChapter: this.currentScene,
-      dialogueIndexInScene: dialogueIndex,
-      choicesMadeSnapshot: [...this.choicesMade],
-    });
-
-    this.typeText(); // 开始打字机动画
-  },
-
-  addDialogueToHistoryLog(logEntry) {
-    storage.get({
-      key: STORAGE_KEYS.HISTORY_LOG,
-      success: (data) => {
-        let history = [];
-        if (data) {
-          try {
-            history = JSON.parse(data);
-          } catch (e) {}
-        }
-        history.push(logEntry);
-        storage.set({ key: STORAGE_KEYS.HISTORY_LOG, value: JSON.stringify(history) });
-      },
-      fail: () => {
-        storage.set({ key: STORAGE_KEYS.HISTORY_LOG, value: JSON.stringify([logEntry]) });
-      },
-    });
-  },
-
-  openHistoryPage() {
-    if (
-      this.isMenuVisible ||
-      this.recoveryMode !== RECOVERY_MODE_NONE ||
-      this.achievedEnding ||
-      this.showChoicesUI ||
-      this.isDataLoading
-    ) {
-      return;
-    }
-    router.push({
-      uri: 'pages/history',
-    });
-  },
-};
+    },
+    onChoice(index) {
+      const uri = this.choice_callbacks[index]
+      this.choice_visible = false
+      this.choices = []
+      this.choice_callbacks = []
+      this.load(`internal://common/content/${uri}`)
+    },
+    goBack() {
+      router.back()
+    },
+  }
 </script>
